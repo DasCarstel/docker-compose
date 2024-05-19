@@ -1,0 +1,109 @@
+services:
+  ###---gluetun---####
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 8888:8888/tcp # HTTP proxy
+      - 8388:8388/tcp # Shadowsocks
+      - 8388:8388/udp # Shadowsocks
+      - 9696:9696 # Prowlarr
+      - 10097:10097 # sabnzbd
+    volumes:
+      - /var/lib/docker/apps/gluetun:/gluetun
+
+    environment:
+      - VPN_SERVICE_PROVIDER=surfshark
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      - TZ=Europe/Berlin
+    networks:
+      mynetwork:
+    restart: unless-stopped
+      
+  ###---prowlarr---####
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    volumes:
+      - /var/lib/docker/apps/prowlarr:/config
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    restart: unless-stopped
+    network_mode: service:gluetun
+    depends_on:
+      - gluetun
+
+  ###---sabnzbd---####
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    volumes:
+      - /var/lib/docker/apps/sabnzbd/config:/config
+      - /var/lib/docker/apps/sabnzbd/downloads:/downloads
+      - /var/lib/docker/apps/sabnzbd/incomplete-downloads:/incomplete-downloads
+      - /Mediathek/Downloaded:/Downloaded
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - fs.inotify.max_user_watches=1048576
+    restart: unless-stopped
+    network_mode: service:gluetun
+    depends_on:
+      - gluetun
+
+  ###---sonarr---####
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    volumes:
+      - /var/lib/docker/apps/sonarr:/config
+      - /var/lib/docker/apps/sabnzbd/downloads:/downloads
+      - type: bind
+        source: /Mediathek
+        target: /Mediathek
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    ports:
+      - 8989:8989
+    networks:
+      mynetwork:
+        ipv4_address: 172.21.0.5
+    restart: unless-stopped
+
+  ###---radarr---####
+  radarr:
+    container_name: radarr
+    image: lscr.io/linuxserver/radarr:latest
+    volumes:
+      - /var/lib/docker/apps/radarr:/config
+      - /var/lib/docker/apps/sabnzbd/downloads:/downloads
+      - type: bind
+        source: /Mediathek
+        target: /Mediathek
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    ports:
+      - 7878:7878
+    networks:
+      mynetwork:
+        ipv4_address: 172.21.0.4
+    restart: unless-stopped
+
+networks:
+  mynetwork:
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
