@@ -38,7 +38,7 @@ services:
     container_name: zigbee2mqtt
     image: koenkk/zigbee2mqtt:latest
     ports:
-      - 8080:8080 # Frontend port
+      - 8082:8080 # Frontend port
     volumes:
       - /var/lib/docker/apps/zigbee2mqtt:/app/data
       - /run/udev:/run/udev:ro
