@@ -1,0 +1,57 @@
+services:
+
+###---homeassistant---####
+
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    ports:
+      - 8123:8123
+    volumes:
+      - /var/lib/docker/apps/homeassistant:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    environment:
+      - TZ=Europe/Berlin
+    privileged: true
+    restart: unless-stopped
+
+###---mqtt5---####
+
+  mqtt5:
+    image: eclipse-mosquitto
+    container_name: mqtt5
+    ports:
+      - 1883:1883 #default mqtt port
+      - 9001:9001 #default mqtt port for websockets
+    volumes:
+      - /var/lib/docker/apps/mqtt/config:/mosquitto/config:rw
+      - /var/lib/docker/apps/mqtt/data:/mosquitto/data:rw
+      - /var/lib/docker/apps/mqtt/log:/mosquitto/log:rw
+    environment:
+      - TZ=Europe/Berlin
+    restart: unless-stopped
+  
+###---zigbee2mqtt---####
+  
+  zigbee2mqtt:
+    container_name: zigbee2mqtt
+    image: koenkk/zigbee2mqtt:latest
+    ports:
+      - 8080:8080 # Frontend port
+    volumes:
+      - /var/lib/docker/apps/zigbee2mqtt:/app/data
+      - /run/udev:/run/udev:ro
+    environment:
+      - TZ=Europe/Berlin
+    devices:
+      - /dev/ttyACM0 
+      #- /dev/ttyACM0:/dev/ttyUSB0 
+      #- /dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2684786-if00:/dev/ttyUSB0 
+    restart: unless-stopped
+
+
+
+#networks: # for mqtt5
+  #default:
+    #name: mqtt5-network
