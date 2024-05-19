@@ -1,0 +1,14 @@
+services:
+  onedrive:
+    container_name: onedrive-sync
+    image: driveone/onedrive:edge
+    restart: unless-stopped
+    #command: --verbose --synchronize --disable-download-validation #--resync 15:58
+    command: --verbose --monitor #--resync
+    volumes:
+      - /OneDrive:/onedrive/data
+      - /OneDrive:/home/onedrive/OneDrive
+      - /var/lib/docker/apps/onedrive-sync:/home/onedrive/.config/onedrive
+    environment:
+      - PUID=1000
+      - PGID=1000
