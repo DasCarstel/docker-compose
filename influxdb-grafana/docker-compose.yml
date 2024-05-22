@@ -14,12 +14,14 @@ services:
       - influxdb
     env_file:
       - 'env.influxdb'
+    restart: unless-stopped
     volumes:
       # Data persistency
       # sudo mkdir -p /srv/docker/influxdb/data
       - /var/lib/docker/apps/influxdb:/var/lib/influxdb
       - /var/lib/docker/apps/influxdb2:/var/lib/influxdb2
       - /var/lib/docker/apps/influxdb/etc/influxdb2:/etc/influxdb2
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
@@ -30,6 +32,7 @@ services:
     env_file:
       - 'env.grafana'
     user: "0"
+    restart: unless-stopped
     links:
       - influxdb
     volumes:
