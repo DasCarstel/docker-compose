@@ -25,20 +25,20 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http" # restricts dashboard to internal entrypoint
-      - "traefik.http.routers.traefik.rule=Host(`traefik.nas.mueller-connect.de`)" # if you want a internal domain, get the wildcard cert for it and then choos traefik-dashboard.home.yourdomain.co.uk or what you want
+      - "traefik.http.routers.traefik.rule=Host(`traefik.mueller-nas.de`)" # if you want a internal domain, get the wildcard cert for it and then choos traefik-dashboard.home.yourdomain.co.uk or what you want
       - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$bOL3vgbb$$7gFck0F2FFKNBlVxtBRSY/"
       - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
       - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
       - "traefik.http.routers.traefik-secure.entrypoints=https"
-      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.nas.mueller-connect.de`)" # if you want a internal domain, get the wildcard cert for it and then choos traefik-dashboard.home.yourdomain.co.uk or what you want
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.mueller-nas.de`)" # if you want a internal domain, get the wildcard cert for it and then choos traefik-dashboard.home.yourdomain.co.uk or what you want
       - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
       - "traefik.http.routers.traefik-secure.tls=true"
       - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
-      - "traefik.http.routers.traefik-secure.tls.domains[0].main=mueller-connect.de" #if you use the .home.yourdomain.co.uk entry you have to change the [0] into [1]
-      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.mueller-connect.de" # same here, change 0 to 1
-      #- "traefik.http.routers.traefik-secure.tls.domains[0].main=nas.mueller-connect.de" # If you want *.home.yourdomain.co.uk subdomain or something else, you have to get the certifcates at first
-      #- "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.nas.mueller-connect.de" # get a wildcard certificat for your .home.yourdomain.co.uk
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=mueller-nas.de" #if you use the .home.yourdomain.co.uk entry you have to change the [0] into [1]
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.mueller-nas.de" # same here, change 0 to 1
+      #- "traefik.http.routers.traefik-secure.tls.domains[0].main=nas.mueller-nas.de" # If you want *.home.yourdomain.co.uk subdomain or something else, you have to get the certifcates at first
+      #- "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.nas.mueller-nas.de" # get a wildcard certificat for your .home.yourdomain.co.uk
       - "traefik.http.routers.traefik-secure.service=api@internal"
 
 networks:
