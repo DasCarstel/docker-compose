@@ -29,15 +29,8 @@ services:
       - "traefik.docker.network=proxy"
     networks:
       proxy:
-    #security_opt:
-    #  - no-new-privileges:false
-    user: 1000:1000
-    securityContext:
-      allowPrivilegeEscalation: true
-      capabilities:
-        add:
-        - SETGID
-        - SETUID
+    security_opt:
+      - no-new-privileges:true
 
 ###---mqtt5---####
 
