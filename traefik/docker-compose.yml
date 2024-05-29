@@ -15,7 +15,7 @@ services:
       - 443:443
       - 444:444 # external https
     env_file:
-      - path: /var/lib/docker/volumes/portainer_data/_data/compose/120/stack.env
+      - path: "/var/lib/docker/volumes/portainer_data/_data/compose/120/stack.env"
         required: true # default
     volumes:
       - /etc/localtime:/etc/localtime:ro
