@@ -21,3 +21,23 @@ services:
     ports:
       - 8383:80
     restart: unless-stopped
+        labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.librespeed.entrypoints=http"
+      - "traefik.http.routers.librespeed.rule=Host(`librespeed.mueller-nas.de`)"
+      - "traefik.http.middlewares.librespeed-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.librespeed.middlewares=librespeed-https-redirect"
+      - "traefik.http.routers.librespeed-secure.entrypoints=https"
+      - "traefik.http.routers.librespeed-secure.rule=Host(`librespeed.mueller-nas.de`)"
+      - "traefik.http.routers.librespeed-secure.tls=true"
+      - "traefik.http.routers.librespeed-secure.service=librespeed"
+      - "traefik.http.services.librespeed.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
