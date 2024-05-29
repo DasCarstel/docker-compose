@@ -76,7 +76,7 @@ services:
       - "traefik.http.routers.zigbee2mqtt-secure.rule=Host(`zigbee2mqtt.mueller-nas.de`)"
       - "traefik.http.routers.zigbee2mqtt-secure.tls=true"
       - "traefik.http.routers.zigbee2mqtt-secure.service=zigbee2mqtt"
-      - "traefik.http.services.zigbee2mqtt.loadbalancer.server.port=8082"
+      - "traefik.http.services.zigbee2mqtt.loadbalancer.server.port=8080"
       - "traefik.docker.network=proxy"
     networks:
       proxy:
