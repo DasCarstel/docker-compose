@@ -35,7 +35,7 @@ services:
     networks:
       proxy:
     security_opt:
-      - no-new-privileges:false
+      - no-new-privileges:false # https://github.com/pi-hole/docker-pi-hole/issues/536#issuecomment-571908446
 
 networks:
   proxy:
