@@ -25,7 +25,7 @@ services:
       - "traefik.http.routers.homeassistant-secure.rule=Host(`homeassistant.mueller-nas.de`)"
       - "traefik.http.routers.homeassistant-secure.tls=true"
       - "traefik.http.routers.homeassistant-secure.service=homeassistant"
-      - "traefik.http.services.homeassistant.loadbalancer.server.port=80"
+      - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
       - "traefik.docker.network=proxy"
     networks:
       proxy:
@@ -76,7 +76,7 @@ services:
       - "traefik.http.routers.zigbee2mqtt-secure.rule=Host(`zigbee2mqtt.mueller-nas.de`)"
       - "traefik.http.routers.zigbee2mqtt-secure.tls=true"
       - "traefik.http.routers.zigbee2mqtt-secure.service=zigbee2mqtt"
-      - "traefik.http.services.zigbee2mqtt.loadbalancer.server.port=80"
+      - "traefik.http.services.zigbee2mqtt.loadbalancer.server.port=8082"
       - "traefik.docker.network=proxy"
     networks:
       proxy:
