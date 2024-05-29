@@ -29,8 +29,8 @@ services:
       - "traefik.docker.network=proxy"
     networks:
       proxy:
-    security_opt:
-      - no-new-privileges:false
+    #security_opt:
+    #  - no-new-privileges:false
 
 ###---mqtt5---####
 
