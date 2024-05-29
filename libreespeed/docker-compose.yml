@@ -21,7 +21,7 @@ services:
     ports:
       - 8383:80
     restart: unless-stopped
-        labels:
+    labels:
       - "traefik.enable=true"
       - "traefik.http.routers.librespeed.entrypoints=http"
       - "traefik.http.routers.librespeed.rule=Host(`librespeed.mueller-nas.de`)"
