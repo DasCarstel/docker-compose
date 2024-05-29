@@ -14,7 +14,8 @@ services:
       - 81:81 # external http
       - 443:443
       - 444:444 # external https
-    env_file: /data/.env/traefik/stack.env
+    environment:
+    - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
