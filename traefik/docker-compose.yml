@@ -15,7 +15,7 @@ services:
       - 443:443
       - 444:444 # external https
     env_file:
-      - /var/lib/docker/volumes/portainer_data/_data/compose/120/stack.env
+      - stack.env
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -23,6 +23,7 @@ services:
       - /var/lib/docker/apps/traefik/acme.json:/acme.json
       - /var/lib/docker/apps/traefik/config.yml:/config.yml:ro
       - /var/lib/docker/apps/traefik/logs:/var/log/traefik
+      - /var/lib/docker/volumes/portainer_data/_data/stack.env:/stack.env
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http" # restricts dashboard to internal entrypoint
