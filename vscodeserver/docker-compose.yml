@@ -17,3 +17,23 @@ services:
     ports:
       - 8443:8443
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vscodeserver.entrypoints=http"
+      - "traefik.http.routers.vscodeserver.rule=Host(`vscodeserver.mueller-nas.de`)"
+      - "traefik.http.middlewares.vscodeserver-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.vscodeserver.middlewares=vscodeserver-https-redirect"
+      - "traefik.http.routers.vscodeserver-secure.entrypoints=https"
+      - "traefik.http.routers.vscodeserver-secure.rule=Host(`vscodeserver.mueller-nas.de`)"
+      - "traefik.http.routers.vscodeserver-secure.tls=true"
+      - "traefik.http.routers.vscodeserver-secure.service=vscodeserver"
+      - "traefik.http.services.vscodeserver.loadbalancer.server.port=8443"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
