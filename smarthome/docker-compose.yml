@@ -31,6 +31,12 @@ services:
       proxy:
     #security_opt:
     #  - no-new-privileges:false
+    securityContext:
+      allowPrivilegeEscalation: true
+      capabilities:
+        add:
+        - SETGID
+        - SETUID
 
 ###---mqtt5---####
 
