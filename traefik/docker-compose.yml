@@ -14,6 +14,7 @@ services:
       - 81:81 # external http
       - 443:443
       - 444:444 # external https
+      - 8282:8080 # Traefik Dashboard
     environment:
     - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
     #- CF_API_KEY=
