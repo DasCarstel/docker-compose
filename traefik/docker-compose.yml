@@ -28,6 +28,7 @@ services:
       - /var/lib/docker/apps/traefik/acme.json:/acme.json
       - /var/lib/docker/apps/traefik/config.yml:/config.yml:ro
       - /var/lib/docker/apps/traefik/logs:/var/log/traefik
+      - /var/lib/docker/apps/traefik/rules:/rules # https://doc.traefik.io/traefik/providers/file/#directory copy for this rule usecase https://www.smarthomebeginner.com/traefik-docker-compose-guide-2022/
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.entrypoints=http" # restricts dashboard to internal entrypoint
