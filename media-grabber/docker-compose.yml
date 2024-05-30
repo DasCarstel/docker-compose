@@ -105,7 +105,7 @@ services:
       - "traefik.http.routers.sonarr-secure.rule=Host(`sonarr.mueller-nas.de`)"
       - "traefik.http.routers.sonarr-secure.tls=true"
       - "traefik.http.routers.sonarr-secure.service=sonarr"
-      - "traefik.http.services.sonarr.loadbalancer.server.port=80"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
       - "traefik.docker.network=proxy"
     security_opt:
       - no-new-privileges:true
