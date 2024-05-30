@@ -144,6 +144,8 @@ services:
     ## Never store database files on an unreliable device such as a USB flash drive, an SD card, or a shared network folder:
     volumes:
       - "/var/lib/docker/apps/photoprism-private/database:/var/lib/mysql" # DO NOT REMOVE
+    ports:
+      - "3306:3306"
     environment:
       MARIADB_AUTO_UPGRADE: "1"
       MARIADB_INITDB_SKIP_TZINFO: "1"
