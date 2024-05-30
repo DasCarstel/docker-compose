@@ -46,7 +46,7 @@ services:
       - apparmor:unconfined
     ## Server port mapping in the format "Host:Container". To use a different port, change the host port on
     ## the left-hand side and keep the container port, e.g. "80:2342" (for HTTP) or "443:2342 (for HTTPS):
-    ports:
+    #ports:
       #- "2343:2343"
     ## Before you start the service, please check the following config options (and change them as needed):
     ## https://docs.photoprism.app/getting-started/config-options/
@@ -125,8 +125,8 @@ services:
       - "traefik.http.services.photoprism-private.loadbalancer.server.port=2342"
       - "traefik.docker.network=proxy"
     networks:
-      - proxy
-      - internal
+      proxy;:
+      internal:
 
   ## MariaDB Database Server (recommended)
   ## see https://docs.photoprism.app/getting-started/faq/#should-i-use-sqlite-mariadb-or-mysql
