@@ -15,7 +15,20 @@ services:
       - 10097:10097 # sabnzbd
     volumes:
       - /var/lib/docker/apps/gluetun:/gluetun
-
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prowlarr.entrypoints=http"
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.mueller-nas.de`)"
+      - "traefik.http.middlewares.prowlarr-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.prowlarr.middlewares=prowlarr-https-redirect"
+      - "traefik.http.routers.prowlarr-secure.entrypoints=https"
+      - "traefik.http.routers.prowlarr-secure.rule=Host(`prowlarr.mueller-nas.de`)"
+      - "traefik.http.routers.prowlarr-secure.tls=true"
+      - "traefik.http.routers.prowlarr-secure.service=prowlarr"
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696"
+      - "traefik.docker.network=proxy"
+    security_opt:
+      - no-new-privileges:true
     environment:
       - VPN_SERVICE_PROVIDER=surfshark
       - VPN_TYPE=wireguard
@@ -23,7 +36,8 @@ services:
       - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
       - TZ=Europe/Berlin
     networks:
-      mynetwork:
+      - mynetwork
+      - proxy
     restart: unless-stopped
       
   ###---prowlarr---####
@@ -107,3 +121,5 @@ networks:
     ipam:
       config:
         - subnet: 172.21.0.0/24
+  proxy:
+    external: true
