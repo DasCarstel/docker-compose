@@ -125,8 +125,8 @@ services:
       - "traefik.http.services.photoprism-private.loadbalancer.server.port=2342"
       - "traefik.docker.network=proxy"
     networks:
-      proxy:
-      internal:
+      - proxy
+      - internal
 
   ## MariaDB Database Server (recommended)
   ## see https://docs.photoprism.app/getting-started/faq/#should-i-use-sqlite-mariadb-or-mysql
