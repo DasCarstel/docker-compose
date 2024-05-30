@@ -149,7 +149,7 @@ services:
       MARIADB_USER: "photoprism"
       MARIADB_PASSWORD: "insecure"
       MARIADB_ROOT_PASSWORD: "insecure"
-    networks:
+    networks: # added network becuase without it PhotoPrism cant connect, while using Treafik
       proxy:
 
   ## Watchtower upgrades services automatically (optional)
