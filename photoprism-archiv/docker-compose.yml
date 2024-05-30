@@ -47,15 +47,15 @@ services:
     ## Server port mapping in the format "Host:Container". To use a different port, change the host port on
     ## the left-hand side and keep the container port, e.g. "80:2342" (for HTTP) or "443:2342 (for HTTPS):
     ports:
-      - "2342:2342"
+      - "2344:2344"
     ## Before you start the service, please check the following config options (and change them as needed):
     ## https://docs.photoprism.app/getting-started/config-options/
     environment:
       PHOTOPRISM_ADMIN_USER: "admin"                 # admin login username
       PHOTOPRISM_ADMIN_PASSWORD: "insecure"          # initial admin password (8-72 characters)
       PHOTOPRISM_AUTH_MODE: "password"               # authentication mode (public, password)
-      PHOTOPRISM_SITE_URL: "http://localhost:2342/"  # server URL in the format "http(s)://domain.name(:port)/(path)"
-      PHOTOPRISM_HTTP_PORT: "2342"
+      PHOTOPRISM_SITE_URL: "http://localhost:2344/"  # server URL in the format "http(s)://domain.name(:port)/(path)"
+      PHOTOPRISM_HTTP_PORT: "2344"
       PHOTOPRISM_DISABLE_TLS: "false"                # disables HTTPS/TLS even if the site URL starts with https:// and a certificate is available
       PHOTOPRISM_DEFAULT_TLS: "true"                 # defaults to a self-signed HTTPS/TLS certificate if no other certificate is available
       PHOTOPRISM_ORIGINALS_LIMIT: 5000               # file size limit for originals in MB (increase for high-res video)
@@ -123,7 +123,7 @@ services:
       - "traefik.http.routers.photoprism-archiv-secure.rule=Host(`photoprism-archiv.mueller-nas.de`)"
       - "traefik.http.routers.photoprism-archiv-secure.tls=true"
       - "traefik.http.routers.photoprism-archiv-secure.service=photoprism-archiv"
-      - "traefik.http.services.photoprism-archiv.loadbalancer.server.port=2342"
+      - "traefik.http.services.photoprism-archiv.loadbalancer.server.port=2344"
       - "traefik.docker.network=proxy"
     networks:
       proxy:
