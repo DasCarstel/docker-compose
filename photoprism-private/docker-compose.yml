@@ -42,6 +42,7 @@ services:
       - mariadb
     security_opt:
       - seccomp:unconfined
+      - no-new-privileges:true # for labels in traefik
       - apparmor:unconfined
     ## Server port mapping in the format "Host:Container". To use a different port, change the host port on
     ## the left-hand side and keep the container port, e.g. "80:2342" (for HTTP) or "443:2342 (for HTTPS):
@@ -124,8 +125,6 @@ services:
       - "traefik.docker.network=proxy"
     networks:
       proxy:
-    security_opt:
-      - no-new-privileges:true
 
   ## MariaDB Database Server (recommended)
   ## see https://docs.photoprism.app/getting-started/faq/#should-i-use-sqlite-mariadb-or-mysql
