@@ -125,7 +125,8 @@ services:
       - "traefik.http.services.photoprism-private.loadbalancer.server.port=2343"
       - "traefik.docker.network=proxy"
     networks:
-      proxy:
+      - proxy
+      - internal
 
   ## MariaDB Database Server (recommended)
   ## see https://docs.photoprism.app/getting-started/faq/#should-i-use-sqlite-mariadb-or-mysql
@@ -151,7 +152,7 @@ services:
       MARIADB_PASSWORD: "insecure"
       MARIADB_ROOT_PASSWORD: "insecure"
     networks: # added network becuase without it PhotoPrism cant connect, while using Treafik
-      proxy:
+      - internal
 
   ## Watchtower upgrades services automatically (optional)
   ## see https://docs.photoprism.app/getting-started/updates/#watchtower
@@ -169,3 +170,8 @@ services:
 networks:
   proxy:
     external: true
+  internal:
+    driver: overlay
+    ipam:
+      config:
+        - subnet: 172.16.90.0/24
