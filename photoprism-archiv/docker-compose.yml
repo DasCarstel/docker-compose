@@ -43,6 +43,7 @@ services:
     security_opt:
       - seccomp:unconfined
       - apparmor:unconfined
+      - no-new-privileges:true # Need for labels in treafik
     ## Server port mapping in the format "Host:Container". To use a different port, change the host port on
     ## the left-hand side and keep the container port, e.g. "80:2342" (for HTTP) or "443:2342 (for HTTPS):
     ports:
@@ -111,6 +112,20 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.photoprism-archiv.entrypoints=http"
+      - "traefik.http.routers.photoprism-archiv.rule=Host(`photoprism-archiv.mueller-nas.de`)"
+      - "traefik.http.middlewares.photoprism-archiv-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.photoprism-archiv.middlewares=photoprism-archiv-https-redirect"
+      - "traefik.http.routers.photoprism-archiv-secure.entrypoints=https"
+      - "traefik.http.routers.photoprism-archiv-secure.rule=Host(`photoprism-archiv.mueller-nas.de`)"
+      - "traefik.http.routers.photoprism-archiv-secure.tls=true"
+      - "traefik.http.routers.photoprism-archiv-secure.service=photoprism-archiv"
+      - "traefik.http.services.photoprism-archiv.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
 
   ## MariaDB Database Server (recommended)
   ## see https://docs.photoprism.app/getting-started/faq/#should-i-use-sqlite-mariadb-or-mysql
@@ -135,6 +150,8 @@ services:
       MARIADB_USER: "photoprism"
       MARIADB_PASSWORD: "insecure"
       MARIADB_ROOT_PASSWORD: "insecure"
+    networks: # added network becuase without it PhotoPrism cant connect, while using Treafik
+      proxy:
 
   ## Watchtower upgrades services automatically (optional)
   ## see https://docs.photoprism.app/getting-started/updates/#watchtower
@@ -148,3 +165,7 @@ services:
   #   volumes:
   #     - "/var/run/docker.sock:/var/run/docker.sock"
   #     - "~/.docker/config.json:/config.json" # optional, for authentication if you have a Docker Hub account
+
+networks:
+  proxy:
+    external: true
