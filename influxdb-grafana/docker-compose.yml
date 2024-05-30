@@ -1,6 +1,3 @@
-networks:
-  influxdb:
-
 services:
   influxdb:
     image: influxdb:latest
@@ -12,6 +9,7 @@ services:
       - "2003:2003"
     networks:
       - influxdb
+      - proxy
     env_file:
       - 'env.influxdb'
     restart: unless-stopped
@@ -33,8 +31,6 @@ services:
       - "traefik.http.routers.influxdb-secure.service=influxdb"
       - "traefik.http.services.influxdb.loadbalancer.server.port=8086"
       - "traefik.docker.network=proxy"
-    networks:
-      proxy:
     security_opt:
       - no-new-privileges:true
 
@@ -45,6 +41,7 @@ services:
       - "3000:3000"
     networks:
       - influxdb
+      - proxy
     env_file:
       - 'env.grafana'
     user: "0"
@@ -67,11 +64,10 @@ services:
       - "traefik.http.routers.grafana-secure.service=grafana"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
       - "traefik.docker.network=proxy"
-    networks:
-      proxy:
     security_opt:
       - no-new-privileges:true
 
 networks:
   proxy:
     external: true
+  influxdb:
