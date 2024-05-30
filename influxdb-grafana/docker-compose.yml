@@ -7,7 +7,7 @@ services:
     container_name: influxdb
     ports:
       - "8083:8083"
-      - "8086:8086"
+      - "8086:8086" # frontend port
       - "8090:8090"
       - "2003:2003"
     networks:
@@ -21,6 +21,22 @@ services:
       - /var/lib/docker/apps/influxdb:/var/lib/influxdb
       - /var/lib/docker/apps/influxdb2:/var/lib/influxdb2
       - /var/lib/docker/apps/influxdb/etc/influxdb2:/etc/influxdb2
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.influxdb.entrypoints=http"
+      - "traefik.http.routers.influxdb.rule=Host(`influxdb.mueller-nas.de`)"
+      - "traefik.http.middlewares.influxdb-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.influxdb.middlewares=influxdb-https-redirect"
+      - "traefik.http.routers.influxdb-secure.entrypoints=https"
+      - "traefik.http.routers.influxdb-secure.rule=Host(`influxdb.mueller-nas.de`)"
+      - "traefik.http.routers.influxdb-secure.tls=true"
+      - "traefik.http.routers.influxdb-secure.service=influxdb"
+      - "traefik.http.services.influxdb.loadbalancer.server.port=8086"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
 
   grafana:
     image: grafana/grafana:latest
@@ -39,3 +55,23 @@ services:
       # Data persistency
       # sudo mkdir -p /srv/docker/grafana/data; chown 472:472 /srv/docker/grafana/data
       - /var/lib/docker/apps/grafana:/var/lib/grafana
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.entrypoints=http"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.mueller-nas.de`)"
+      - "traefik.http.middlewares.grafana-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.grafana.middlewares=grafana-https-redirect"
+      - "traefik.http.routers.grafana-secure.entrypoints=https"
+      - "traefik.http.routers.grafana-secure.rule=Host(`grafana.mueller-nas.de`)"
+      - "traefik.http.routers.grafana-secure.tls=true"
+      - "traefik.http.routers.grafana-secure.service=grafana"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
