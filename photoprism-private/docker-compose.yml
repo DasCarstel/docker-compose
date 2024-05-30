@@ -121,7 +121,7 @@ services:
       - "traefik.http.routers.photoprism-private-secure.rule=Host(`photoprism-private.mueller-nas.de`)"
       - "traefik.http.routers.photoprism-private-secure.tls=true"
       - "traefik.http.routers.photoprism-private-secure.service=photoprism-private"
-      - "traefik.http.services.photoprism-private.loadbalancer.server.port=2342"
+      - "traefik.http.services.photoprism-private.loadbalancer.server.port=2343"
       - "traefik.docker.network=proxy"
     networks:
       proxy:
