@@ -110,6 +110,22 @@ services:
             - driver: "nvidia"
               count: 1
               capabilities: [gpu]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.photoprism-private.entrypoints=http"
+      - "traefik.http.routers.photoprism-private.rule=Host(`photoprism-private.mueller-nas.de`)"
+      - "traefik.http.middlewares.photoprism-private-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.photoprism-private.middlewares=photoprism-private-https-redirect"
+      - "traefik.http.routers.photoprism-private-secure.entrypoints=https"
+      - "traefik.http.routers.photoprism-private-secure.rule=Host(`photoprism-private.mueller-nas.de`)"
+      - "traefik.http.routers.photoprism-private-secure.tls=true"
+      - "traefik.http.routers.photoprism-private-secure.service=photoprism-private"
+      - "traefik.http.services.photoprism-private.loadbalancer.server.port=2342"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
 
   ## MariaDB Database Server (recommended)
   ## see https://docs.photoprism.app/getting-started/faq/#should-i-use-sqlite-mariadb-or-mysql
@@ -147,3 +163,7 @@ services:
   #   volumes:
   #     - "/var/run/docker.sock:/var/run/docker.sock"
   #     - "~/.docker/config.json:/config.json" # optional, for authentication if you have a Docker Hub account
+
+networks:
+  proxy:
+    external: true
