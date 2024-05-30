@@ -122,7 +122,7 @@ services:
       - "traefik.http.routers.photoprism-archiv-secure.rule=Host(`photoprism-archiv.mueller-nas.de`)"
       - "traefik.http.routers.photoprism-archiv-secure.tls=true"
       - "traefik.http.routers.photoprism-archiv-secure.service=photoprism-archiv"
-      - "traefik.http.services.photoprism-archiv.loadbalancer.server.port=80"
+      - "traefik.http.services.photoprism-archiv.loadbalancer.server.port=2342"
       - "traefik.docker.network=proxy"
     networks:
       proxy:
