@@ -88,3 +88,23 @@ services:
 # The default language to use for OCR. Set this to the language most of your
 # documents are written in.
       PAPERLESS_OCR_LANGUAGE: deu
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.paperless-ngx.entrypoints=http"
+      - "traefik.http.routers.paperless-ngx.rule=Host(`paperless-ngx.mueller-nas.de`)"
+      - "traefik.http.middlewares.paperless-ngx-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.paperless-ngx.middlewares=paperless-ngx-https-redirect"
+      - "traefik.http.routers.paperless-ngx-secure.entrypoints=https"
+      - "traefik.http.routers.paperless-ngx-secure.rule=Host(`paperless-ngx.mueller-nas.de`)"
+      - "traefik.http.routers.paperless-ngx-secure.tls=true"
+      - "traefik.http.routers.paperless-ngx-secure.service=paperless-ngx"
+      - "traefik.http.services.paperless-ngx.loadbalancer.server.port=8000"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
