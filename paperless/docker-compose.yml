@@ -35,6 +35,8 @@ services:
     restart: unless-stopped
     volumes:
       - /var/lib/docker/apps/redis:/data
+    networks:
+      internal:
 
   db:
     container_name: paperless-postgres
@@ -46,6 +48,8 @@ services:
       POSTGRES_DB: paperless
       POSTGRES_USER: paperless
       POSTGRES_PASSWORD: paperless
+    networks:
+      internal:
 
   webserver:
     container_name: paperless-ngx
@@ -102,9 +106,11 @@ services:
       - "traefik.docker.network=proxy"
     networks:
       proxy:
+      internal:
     security_opt:
       - no-new-privileges:true
 
 networks:
   proxy:
     external: true
+  internal:
