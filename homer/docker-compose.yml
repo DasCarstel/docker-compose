@@ -9,3 +9,23 @@ services:
     environment:
       - INIT_ASSETS=1 # default
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.homer.entrypoints=http"
+      - "traefik.http.routers.homer.rule=Host(`homer.mueller-nas.de`)"
+      - "traefik.http.middlewares.homer-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.homer.middlewares=homer-https-redirect"
+      - "traefik.http.routers.homer-secure.entrypoints=https"
+      - "traefik.http.routers.homer-secure.rule=Host(`homer.mueller-nas.de`)"
+      - "traefik.http.routers.homer-secure.tls=true"
+      - "traefik.http.routers.homer-secure.service=homer"
+      - "traefik.http.services.homer.loadbalancer.server.port=8080"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
