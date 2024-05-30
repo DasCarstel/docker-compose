@@ -130,6 +130,7 @@ services:
     networks:
       mynetwork:
         ipv4_address: 172.21.0.4
+      proxy:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -143,8 +144,6 @@ services:
       - "traefik.http.routers.radarr-secure.service=radarr"
       - "traefik.http.services.radarr.loadbalancer.server.port=7878"
       - "traefik.docker.network=proxy"
-    networks:
-      proxy:
     security_opt:
       - no-new-privileges:true
 
