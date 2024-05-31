@@ -17,7 +17,7 @@ services:
       - ${UPLOAD_LOCATION}:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
     env_file:
-      - .env
+      - stack.env
     ports:
       - 2283:3001
     depends_on:
@@ -36,7 +36,7 @@ services:
       - ${UPLOAD_LOCATION}:/usr/src/app/upload
       - /etc/localtime:/etc/localtime:ro
     env_file:
-      - .env
+      - stack.env
     depends_on:
       - redis
       - database
@@ -53,7 +53,7 @@ services:
     volumes:
       - model-cache:/cache
     env_file:
-      - .env
+      - stack.env
     restart: always
 
   redis:
