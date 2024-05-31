@@ -2,7 +2,7 @@ services:
   uptime-kuma:
     image: louislam/uptime-kuma:1
     volumes:
-      - ./data:/app/data
+      - /var/lib/docker/apps/uptime-kuma:/app/data
     ports:
       # <Host Port>:<Container Port>
       - 3001:3001
@@ -17,7 +17,7 @@ services:
       - "traefik.http.routers.uptime-kuma-secure.rule=Host(`uptime-kuma.mueller-nas.de`)"
       - "traefik.http.routers.uptime-kuma-secure.tls=true"
       - "traefik.http.routers.uptime-kuma-secure.service=uptime-kuma"
-      - "traefik.http.services.uptime-kuma.loadbalancer.server.port=80"
+      - "traefik.http.services.uptime-kuma.loadbalancer.server.port=3001"
       - "traefik.docker.network=proxy"
     networks:
       proxy:
