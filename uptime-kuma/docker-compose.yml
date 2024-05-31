@@ -1,0 +1,29 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    volumes:
+      - ./data:/app/data
+    ports:
+      # <Host Port>:<Container Port>
+      - 3001:3001
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.uptime-kuma.entrypoints=http"
+      - "traefik.http.routers.uptime-kuma.rule=Host(`uptime-kuma.mueller-nas.de`)"
+      - "traefik.http.middlewares.uptime-kuma-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.uptime-kuma.middlewares=uptime-kuma-https-redirect"
+      - "traefik.http.routers.uptime-kuma-secure.entrypoints=https"
+      - "traefik.http.routers.uptime-kuma-secure.rule=Host(`uptime-kuma.mueller-nas.de`)"
+      - "traefik.http.routers.uptime-kuma-secure.tls=true"
+      - "traefik.http.routers.uptime-kuma-secure.service=uptime-kuma"
+      - "traefik.http.services.uptime-kuma.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
