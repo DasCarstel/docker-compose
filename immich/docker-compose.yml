@@ -45,6 +45,16 @@ services:
       - redis
       - database
     restart: always
+    deploy: # added this too beacuse i am not sure thaat extends works with portainer 
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities:
+                - gpu
+                - compute
+                - video
 
   immich-machine-learning:
     container_name: immich_machine_learning
@@ -57,6 +67,15 @@ services:
     volumes:
       - model-cache:/cache
     restart: always
+    deploy: # added this too beacuse i am not sure thaat extends works with portainer 
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities:
+                - gpu
+
 
   redis:
     container_name: immich_redis
