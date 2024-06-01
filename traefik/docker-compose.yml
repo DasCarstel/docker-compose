@@ -9,6 +9,7 @@ services:
       - no-new-privileges:true
     networks:
        proxy:
+        ipv4_address: 192.168.80.1 # static ip for homeassistant use 
     ports:
       - 80:80
       - 81:81 # external http
