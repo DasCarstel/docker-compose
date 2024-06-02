@@ -94,7 +94,6 @@ networks:
   proxy:
     external: true
   mqqtnetwork: # for mqtt5
-    name: mqtt5-network
     ipam:
       config:
         - subnet: 172.41.0.0/24
