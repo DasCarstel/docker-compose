@@ -49,7 +49,7 @@ services:
     environment:
       - TZ=Europe/Berlin
     restart: unless-stopped
-    networks:
+    #networks:
       #mqqtnetwork:
         #ipv4_address: 172.41.0.2
 
