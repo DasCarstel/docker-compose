@@ -86,7 +86,7 @@ services:
     networks:
       proxy:
       mqqtnetwork:
-        ipv4_address: 172.41.0.4
+        ipv4_address: 172.41.0.4 #needs to start at 4, low numbers a not possible 
     security_opt:
       - no-new-privileges:true
 

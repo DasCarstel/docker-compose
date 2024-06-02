@@ -138,7 +138,7 @@ services:
       - 7878:7878
     networks:
       mynetwork:
-        ipv4_address: 172.21.0.4
+        ipv4_address: 172.21.0.4 #needs to start at 4, low numbers a not possible 
       proxy:
     restart: unless-stopped
     labels:
