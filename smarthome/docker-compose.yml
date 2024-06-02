@@ -47,6 +47,9 @@ services:
     environment:
       - TZ=Europe/Berlin
     restart: unless-stopped
+    networks:
+      mqqtnetwork:
+        ipv4_address: 172.23.0.2
 
   
 ###---zigbee2mqtt---####
@@ -80,15 +83,16 @@ services:
       - "traefik.docker.network=proxy"
     networks:
       proxy:
+      mqqtnetwork:
+        ipv4_address: 172.23.0.1
     security_opt:
       - no-new-privileges:true
 
 networks:
   proxy:
     external: true
-
-
-
-#networks: # for mqtt5
-  #default:
-    #name: mqtt5-network
+  mqqtnetwork: # for mqtt5
+    name: mqtt5-network
+    ipam:
+      config:
+        - subnet: 172.23.0.0/24
