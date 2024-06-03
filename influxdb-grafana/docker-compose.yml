@@ -8,9 +8,9 @@ services:
       - "8090:8090"
       - "2003:2003"
     networks:
-      - influxdb:
-          ipv4_address: 172.45.0.4 #needs to start at 4, low numbers a not possible 
-      - proxy:
+      influxdb:
+        ipv4_address: 172.45.0.4 #needs to start at 4, low numbers a not possible 
+      proxy:
     env_file:
       - 'env.influxdb'
     restart: unless-stopped
@@ -41,14 +41,14 @@ services:
     ports:
       - "3000:3000"
     networks:
-      - influxdb:
-      - proxy:
+      influxdb:
+      proxy:
     env_file:
       - 'env.grafana'
     user: "0"
     restart: unless-stopped
     links:
-      - influxdb
+      influxdb:
     volumes:
       # Data persistency
       # sudo mkdir -p /srv/docker/grafana/data; chown 472:472 /srv/docker/grafana/data
