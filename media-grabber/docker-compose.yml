@@ -24,8 +24,8 @@ services:
       - "traefik.http.routers.prowlarr-secure.entrypoints=https"
       - "traefik.http.routers.prowlarr-secure.rule=Host(`prowlarr.mueller-nas.de`)"
       - "traefik.http.routers.prowlarr-secure.tls=true"
-      - "traefik.http.routers.prowlarr-secure.service=media-grab" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
-      - "traefik.http.services.media-grab.loadbalancer.server.port=9696" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
+      - "traefik.http.routers.prowlarr-secure.service=prowlarr" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=9696" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
       - "traefik.http.routers.sabnzbd.entrypoints=http"
       - "traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.mueller-nas.de`)"
       - "traefik.http.middlewares.sabnzbd-https-redirect.redirectscheme.scheme=https"
@@ -33,8 +33,8 @@ services:
       - "traefik.http.routers.sabnzbd-secure.entrypoints=https"
       - "traefik.http.routers.sabnzbd-secure.rule=Host(`sabnzbd.mueller-nas.de`)"
       - "traefik.http.routers.sabnzbd-secure.tls=true"
-      - "traefik.http.routers.sabnzbd-secure.service=media-grab" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
-      - "traefik.http.services.media-grab.loadbalancer.server.port=10097" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
+      - "traefik.http.routers.sabnzbd-secure.service=sabnzbd" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
+      - "traefik.http.services.sabnzbd.loadbalancer.server.port=10097" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
       - "traefik.docker.network=proxy"
     security_opt:
       - no-new-privileges:true
