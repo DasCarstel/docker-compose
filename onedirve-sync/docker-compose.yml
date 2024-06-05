@@ -3,8 +3,9 @@ services:
     container_name: onedrive-sync
     image: driveone/onedrive:edge
     restart: unless-stopped
-    #command: --verbose --synchronize --disable-download-validation #--resync 15:58
-    command: --verbose --monitor #--resync
+    #command: --verbose --synchronize --disable-download-validation # old command
+    command: --verbose --monitor
+    tty: true
     volumes:
       - /OneDrive:/onedrive/data
       - /OneDrive:/home/onedrive/OneDrive
