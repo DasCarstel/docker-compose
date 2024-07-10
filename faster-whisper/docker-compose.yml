@@ -6,9 +6,9 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Berlin
-      - WHISPER_MODEL=medium
+      - WHISPER_MODEL=small-int8
       - WHISPER_BEAM=1 #optional
-      - WHISPER_LANG=ger #optional
+      - WHISPER_LANG=de #optional
     volumes:
       - /var/lib/docker/apps/faster-whisper:/config
     ports:
