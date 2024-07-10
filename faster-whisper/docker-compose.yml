@@ -8,7 +8,7 @@ services:
       - TZ=Europe/Berlin
       - WHISPER_MODEL=medium
       - WHISPER_BEAM=1 #optional
-      - WHISPER_LANG=de #optional
+      - WHISPER_LANG=ger #optional
     volumes:
       - /var/lib/docker/apps/faster-whisper:/config
     ports:
