@@ -11,6 +11,7 @@ services:
       - /var/lib/docker/apps/homeassistant:/config
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - TZ=Europe/Berlin
     privileged: true
