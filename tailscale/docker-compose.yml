@@ -1,0 +1,23 @@
+version: '3.8'
+services:
+ 
+  tailscaled:
+    container_name: tailscaled
+    user: "0:0"
+    privileged: true
+    cap_add:
+        - NET_ADMIN
+    volumes:
+        - '/var/lib/docker/apps/tailscale:/var/lib'
+        - '/dev/net/tun:/dev/net/tun'
+    network_mode: "host"
+    image: tailscale/tailscale
+    command: 
+        - tailscaled
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TS_USERSPACE=true
+      - TS_AUTH_KEY=${TS_AUTH_KEY}
+      - TS_ROUTES=192.168.80.0/24
