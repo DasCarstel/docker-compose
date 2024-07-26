@@ -57,7 +57,7 @@ services:
       - "traefik.http.routers.linkwarden-secure.rule=Host(`linkwarden.mueller-nas.de`)"
       - "traefik.http.routers.linkwarden-secure.tls=true"
       - "traefik.http.routers.linkwarden-secure.service=linkwarden"
-      - "traefik.http.services.linkwarden.loadbalancer.server.port=80"
+      - "traefik.http.services.linkwarden.loadbalancer.server.port=3000"
       - "traefik.docker.network=proxy"
     networks:
       proxy:
