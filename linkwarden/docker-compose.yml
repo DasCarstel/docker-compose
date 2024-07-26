@@ -35,7 +35,7 @@ services:
     volumes:
       - /var/lib/docker/apps/linkwarden:/data/data
     environment:
-      DATABASE_URL: postgres://linkwardenuser:linkwardenpass@linkwarden-db:5432/linkwarden
+      DATABASE_URL: postgres://linkwardenuser:${POSTGRES_PASSWORD}@linkwarden-db:5432/linkwarden
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
 # Additional Optional Settings
