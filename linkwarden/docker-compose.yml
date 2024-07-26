@@ -1,28 +1,49 @@
-version: "3.5"
+# Source: https://mariushosting.com/how-to-install-linkwarden-on-your-synology-nas/
+version: "3.9"
 services:
-  postgres:
-    container_name: linkwarden-postgres
+  db:
+    image: postgres
+    container_name: Linkwarden-DB
     hostname: linkwarden-db
-    image: postgres:16-alpine
-    restart: unless-stopped
+    mem_limit: 1g
+    cpu_shares: 768
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-d", "linkwarden", "-U", "linkwardenuser"]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    volumes:
+      - /var/lib/docker/apps/postgres/linkwarden:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: linkwarden
       POSTGRES_USER: linkwardenuser
-    volumes:
-      - /var/lib/docker/apps/postgres/linkwarden:/var/lib/postgresql/data
+      POSTGRES_PASSWORD: linkwardenpass
+    restart: on-failure:5
 
   linkwarden:
-    container_name: linkwarden
+    image: ghcr.io/linkwarden/linkwarden:latest
+    container_name: Linkwarden
     hostname: linkwarden
-    environment:
-      DATABASE_URL: postgres://linkwardenuser:${POSTGRES_PASSWORD}@linkwarden-db:5432/linkwarden
-      #- DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5432/postgres
-    restart: unless-stopped
-    # build: . # uncomment this line to build from source
-    image: ghcr.io/linkwarden/linkwarden:latest # comment this line to build from source
+    mem_limit: 2g
+    cpu_shares: 768
+    security_opt:
+      - no-new-privileges:true
     ports:
       - 7461:3000
     volumes:
       - /var/lib/docker/apps/linkwarden:/data/data
+    environment:
+      DATABASE_URL: postgres://linkwardenuser:linkwardenpass@linkwarden-db:5432/linkwarden
+      NEXTAUTH_SECRET: v6M37byB5LwYHCPZyCJzDGNUSsHY4grj
+      NEXTAUTH_URL: http://localhost:3000/api/v1/auth
+# Additional Optional Settings
+#      PAGINATION_TAKE_COUNT: 
+#      STORAGE_FOLDER: 
+#      AUTOSCROLL_TIMEOUT: 
+      NEXT_PUBLIC_DISABLE_REGISTRATION: false #or true
+    restart: on-failure:5
     depends_on:
-      - postgres
+      db:
+        condition: service_healthy
