@@ -4,7 +4,7 @@ services:
     image: postgres:16-alpine
     restart: always
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - /var/lib/docker/apps/postgres:/var/lib/postgresql/data
   linkwarden:
     environment:
       - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres
@@ -14,6 +14,6 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./data:/data/data
+      - /var/lib/docker/apps/linkwarden:/data/data
     depends_on:
       - postgres
