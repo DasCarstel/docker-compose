@@ -21,6 +21,8 @@ services:
       POSTGRES_USER: linkwardenuser
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     restart: on-failure:5
+    networks:
+      internal:
 
   linkwarden:
     image: ghcr.io/linkwarden/linkwarden:latest
@@ -61,7 +63,9 @@ services:
       - "traefik.docker.network=proxy"
     networks:
       proxy:
+      internal:
 
 networks:
   proxy:
     external: true
+  internal:
