@@ -19,7 +19,6 @@ services:
     environment:
       POSTGRES_DB: linkwarden
       POSTGRES_USER: linkwardenuser
-      POSTGRES_PASSWORD: linkwardenpass
     restart: on-failure:5
 
   linkwarden:
@@ -36,8 +35,6 @@ services:
       - /var/lib/docker/apps/linkwarden:/data/data
     environment:
       DATABASE_URL: postgres://linkwardenuser:linkwardenpass@linkwarden-db:5432/linkwarden
-      NEXTAUTH_SECRET: v6M37byB5LwYHCPZyCJzDGNUSsHY4grj
-      NEXTAUTH_URL: http://localhost:3000/api/v1/auth
 # Additional Optional Settings
 #      PAGINATION_TAKE_COUNT: 
 #      STORAGE_FOLDER: 
