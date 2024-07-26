@@ -1,21 +1,28 @@
 version: "3.5"
 services:
   postgres:
-    container_name: linkwardenpostgres
+    container_name: linkwarden-postgres
+    hostname: linkwarden-db
     image: postgres:16-alpine
-    restart: always
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: linkwarden
+      POSTGRES_USER: linkwardenuser
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - /var/lib/docker/apps/postgres/linkwarden:/var/lib/postgresql/data
 
   linkwarden:
     container_name: linkwarden
+    hostname: linkwarden
     environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5432/postgres
-    restart: always
+      DATABASE_URL: postgres://linkwardenuser:${POSTGRES_PASSWORD}@linkwarden-db:5432/linkwarden
+      #- DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@localhost:5432/postgres
+    restart: unless-stopped
     # build: . # uncomment this line to build from source
     image: ghcr.io/linkwarden/linkwarden:latest # comment this line to build from source
     ports:
-      - 3002:3000
+      - 7461:3000
     volumes:
       - /var/lib/docker/apps/linkwarden:/data/data
     depends_on:
