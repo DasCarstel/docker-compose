@@ -8,7 +8,6 @@ services:
     environment:
       POSTGRES_DB: linkwarden
       POSTGRES_USER: linkwardenuser
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - /var/lib/docker/apps/postgres/linkwarden:/var/lib/postgresql/data
 
