@@ -33,15 +33,9 @@ services:
       resources:
         reservations:
           devices:
-            - capabilities: [gpu]
-    #runtime: nvidia
-    #deploy:
-      #resources:
-        #reservations:
-          #devices:
-            #- driver: nvidia
-              #count: 1
-              #capabilities: [gpu]
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     devices:
       #- /dev/nvidia-caps:/dev/nvidia-caps
       - /dev/nvram:/dev/nvram
