@@ -76,8 +76,7 @@ services:
     restart: on-failure:5
     depends_on:
       - gluetun
-      - db:
-          condition: service_healthy
+      - db
     network_mode: service:gluetun
     networks:
       - internal
