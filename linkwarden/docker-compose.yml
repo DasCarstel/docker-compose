@@ -1,7 +1,6 @@
-# Source: https://mariushosting.com/how-to-install-linkwarden-on-your-synology-nas/
 version: "3.9"
 services:
- gluetun:
+  gluetun:
     image: qmcgaw/gluetun
     container_name: gluetun
     cap_add:
@@ -39,6 +38,7 @@ services:
       - mynetwork
       - proxy
     restart: unless-stopped
+
   db:
     image: postgres
     container_name: Linkwarden-DB
@@ -58,7 +58,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     restart: on-failure:5
     networks:
-      internal:
+      - internal
 
   linkwarden:
     image: ghcr.io/linkwarden/linkwarden:latest
@@ -72,11 +72,7 @@ services:
       DATABASE_URL: postgres://linkwardenuser:${POSTGRES_PASSWORD}@linkwarden-db:5432/linkwarden
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-# Additional Optional Settings
-#      PAGINATION_TAKE_COUNT: 
-#      STORAGE_FOLDER: 
-#      AUTOSCROLL_TIMEOUT: 
-      NEXT_PUBLIC_DISABLE_REGISTRATION: false #or true
+      NEXT_PUBLIC_DISABLE_REGISTRATION: false # or true
     restart: on-failure:5
     depends_on:
       gluetun:
@@ -84,7 +80,7 @@ services:
         condition: service_healthy
     network_mode: service:gluetun
     networks:
-      internal:
+      - internal
 
 networks:
   proxy:
