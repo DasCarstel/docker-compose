@@ -63,7 +63,6 @@ services:
   linkwarden:
     image: ghcr.io/linkwarden/linkwarden:latest
     container_name: Linkwarden
-    hostname: linkwarden
     security_opt:
       - no-new-privileges:true
     volumes:
@@ -77,7 +76,7 @@ services:
     depends_on:
       - gluetun
       - db
-    network_mode: service:Linkwarden-gluetun
+    network_mode: service:gluetun
 
 networks:
   proxy:
