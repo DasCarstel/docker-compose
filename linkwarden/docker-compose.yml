@@ -78,8 +78,6 @@ services:
       - gluetun
       - db
     network_mode: service:gluetun
-    networks:
-      - internal
 
 networks:
   proxy:
