@@ -75,9 +75,9 @@ services:
       NEXT_PUBLIC_DISABLE_REGISTRATION: false # or true
     restart: on-failure:5
     depends_on:
-      gluetun:
-      db:
-        condition: service_healthy
+      - gluetun
+      - db:
+          condition: service_healthy
     network_mode: service:gluetun
     networks:
       - internal
