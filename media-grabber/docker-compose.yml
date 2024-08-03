@@ -14,7 +14,7 @@ services:
       - 9696:9696 # Prowlarr
       - 10097:10097 # sabnzbd
     volumes:
-      - /var/lib/docker/apps/gluetun:/gluetun
+      - /var/lib/docker/apps/gluetun/mediagrab:/gluetun
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.prowlarr.entrypoints=http"
