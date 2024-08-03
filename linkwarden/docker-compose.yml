@@ -59,7 +59,7 @@ services:
     restart: on-failure:5
     networks:
       internal:
-        ipv4_address: 172.18.0.4
+        ipv4_address: 172.25.0.4
 
   linkwarden:
     image: ghcr.io/linkwarden/linkwarden:latest
@@ -69,7 +69,7 @@ services:
     volumes:
       - /var/lib/docker/apps/linkwarden:/data/data
     environment:
-      DATABASE_URL: postgres://linkwardenuser:${POSTGRES_PASSWORD}@172.18.0.4:5432/linkwarden
+      DATABASE_URL: postgres://linkwardenuser:${POSTGRES_PASSWORD}@172.25.0.4:5432/linkwarden
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXT_PUBLIC_DISABLE_REGISTRATION: false # or true
@@ -86,4 +86,4 @@ networks:
     # driver: bridge
     ipam:
       config:
-        - subnet: 172.18.0.0/24
+        - subnet: 172.25.0.0/24
