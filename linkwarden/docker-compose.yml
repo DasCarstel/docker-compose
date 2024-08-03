@@ -5,8 +5,6 @@ services:
     image: postgres
     container_name: Linkwarden-DB
     hostname: linkwarden-db
-    mem_limit: 1g
-    cpu_shares: 768
     security_opt:
       - no-new-privileges:true
     healthcheck:
@@ -28,8 +26,6 @@ services:
     image: ghcr.io/linkwarden/linkwarden:latest
     container_name: Linkwarden
     hostname: linkwarden
-    mem_limit: 2g
-    cpu_shares: 768
     security_opt:
       - no-new-privileges:true
     ports:
