@@ -77,7 +77,7 @@ services:
     depends_on:
       - gluetun
       - db
-    network_mode: service:gluetun
+    network_mode: service:Linkwarden-gluetun
 
 networks:
   proxy:
