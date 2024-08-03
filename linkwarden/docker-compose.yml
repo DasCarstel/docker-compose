@@ -35,7 +35,7 @@ services:
       - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
       - TZ=Europe/Berlin
     networks:
-      - internal
+      - linkwarden_internal
       - proxy
     restart: unless-stopped
 
@@ -58,7 +58,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     restart: on-failure:5
     networks:
-      internal:
+      linkwarden_internal:
         ipv4_address: 172.25.0.4
 
   linkwarden:
@@ -82,8 +82,7 @@ services:
 networks:
   proxy:
     external: true
-  internal:
-    # driver: bridge
+  linkwarden_internal:
     ipam:
       config:
         - subnet: 172.25.0.0/24
