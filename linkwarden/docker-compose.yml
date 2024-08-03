@@ -35,7 +35,7 @@ services:
       - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
       - TZ=Europe/Berlin
     networks:
-      - mynetwork
+      - internal
       - proxy
     restart: unless-stopped
 
