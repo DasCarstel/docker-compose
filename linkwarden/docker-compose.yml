@@ -1,6 +1,44 @@
 # Source: https://mariushosting.com/how-to-install-linkwarden-on-your-synology-nas/
 version: "3.9"
 services:
+ gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - 8888:8888/tcp # HTTP proxy
+      - 8388:8388/tcp # Shadowsocks
+      - 8388:8388/udp # Shadowsocks
+      - 7461:3000
+    volumes:
+      - /var/lib/docker/apps/gluetun:/gluetun
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.linkwarden.entrypoints=http"
+      - "traefik.http.routers.linkwarden.rule=Host(`linkwarden.mueller-nas.de`)"
+      - "traefik.http.middlewares.linkwarden-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.linkwarden.middlewares=linkwarden-https-redirect"
+      - "traefik.http.routers.linkwarden-secure.entrypoints=https"
+      - "traefik.http.routers.linkwarden-secure.rule=Host(`linkwarden.mueller-nas.de`)"
+      - "traefik.http.routers.linkwarden-secure.tls=true"
+      - "traefik.http.routers.linkwarden-secure.service=linkwarden"
+      - "traefik.http.services.linkwarden.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - VPN_SERVICE_PROVIDER=surfshark
+      - VPN_TYPE=wireguard
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      - TZ=Europe/Berlin
+    networks:
+      - mynetwork
+      - proxy
+    restart: unless-stopped
   db:
     image: postgres
     container_name: Linkwarden-DB
@@ -28,8 +66,6 @@ services:
     hostname: linkwarden
     security_opt:
       - no-new-privileges:true
-    ports:
-      - 7461:3000
     volumes:
       - /var/lib/docker/apps/linkwarden:/data/data
     environment:
@@ -43,22 +79,11 @@ services:
       NEXT_PUBLIC_DISABLE_REGISTRATION: false #or true
     restart: on-failure:5
     depends_on:
+      gluetun:
       db:
         condition: service_healthy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.linkwarden.entrypoints=http"
-      - "traefik.http.routers.linkwarden.rule=Host(`linkwarden.mueller-nas.de`)"
-      - "traefik.http.middlewares.linkwarden-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.linkwarden.middlewares=linkwarden-https-redirect"
-      - "traefik.http.routers.linkwarden-secure.entrypoints=https"
-      - "traefik.http.routers.linkwarden-secure.rule=Host(`linkwarden.mueller-nas.de`)"
-      - "traefik.http.routers.linkwarden-secure.tls=true"
-      - "traefik.http.routers.linkwarden-secure.service=linkwarden"
-      - "traefik.http.services.linkwarden.loadbalancer.server.port=3000"
-      - "traefik.docker.network=proxy"
+    network_mode: service:gluetun
     networks:
-      proxy:
       internal:
 
 networks:
