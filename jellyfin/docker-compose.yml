@@ -28,22 +28,22 @@ services:
       - 7359:7359/udp #optional
       - 1900:1900/udp #optional
     restart: unless-stopped
-    runtime: nvidia
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    devices:
-      #- /dev/nvidia-caps:/dev/nvidia-caps
-      - /dev/nvram:/dev/nvram
-      - /dev/nvidia0:/dev/nvidia0
-      - /dev/nvidiactl:/dev/nvidiactl
-      - /dev/nvidia-modeset:/dev/nvidia-modeset
-      - /dev/nvidia-uvm:/dev/nvidia-uvm
-      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+    #runtime: nvidia
+    #deploy:
+      #resources:
+        #reservations:
+          #devices:
+            #- driver: nvidia
+              #count: 1
+              #capabilities: [gpu]
+    #devices:
+      ##- /dev/nvidia-caps:/dev/nvidia-caps
+      #- /dev/nvram:/dev/nvram
+      #- /dev/nvidia0:/dev/nvidia0
+      #- /dev/nvidiactl:/dev/nvidiactl
+      #- /dev/nvidia-modeset:/dev/nvidia-modeset
+      #- /dev/nvidia-uvm:/dev/nvidia-uvm
+      #- /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jellyfin.entrypoints=http"
