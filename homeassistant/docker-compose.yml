@@ -68,9 +68,10 @@ services:
     environment:
       - TZ=Europe/Berlin
     devices:
-      - /dev/ttyACM0 
+      #- /dev/ttyACM0 
       #- /dev/ttyACM0:/dev/ttyUSB0 
       #- /dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2684786-if00:/dev/ttyUSB0 #
+      - /dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2684786-if00
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
