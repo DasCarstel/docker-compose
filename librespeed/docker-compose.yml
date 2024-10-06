@@ -17,7 +17,7 @@ services:
       - DB_PORT=DB_PORT #optional
       - IPINFO_APIKEY=ACCESS_TOKEN #optional
     volumes:
-      - /path/to/librespeed/config:/config
+      - /etc/docker/librespeed:/config
     ports:
       - 8383:80
     restart: unless-stopped
