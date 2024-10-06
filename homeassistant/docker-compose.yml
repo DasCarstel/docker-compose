@@ -8,7 +8,7 @@ services:
     ports:
       - 8123:8123
     volumes:
-      - /var/lib/docker/apps/homeassistant:/config
+      - /etc/docker/homeassistant:/config
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
       - /var/run/docker.sock:/var/run/docker.sock # https://github.com/ualex73/monitor_docker?tab=readme-ov-file
@@ -44,9 +44,9 @@ services:
       - 1883:1883 #default mqtt port
       - 9001:9001 #default mqtt port for websockets
     volumes:
-      - /var/lib/docker/apps/mqtt/config:/mosquitto/config:rw
-      - /var/lib/docker/apps/mqtt/data:/mosquitto/data:rw
-      - /var/lib/docker/apps/mqtt/log:/mosquitto/log:rw
+      - /etc/docker/mqtt/config:/mosquitto/config:rw
+      - /etc/docker/mqtt/data:/mosquitto/data:rw
+      - /etc/docker/mqtt/log:/mosquitto/log:rw
     environment:
       - TZ=Europe/Berlin
     restart: unless-stopped
@@ -63,7 +63,7 @@ services:
     ports:
       - 8082:8080 # Frontend port
     volumes:
-      - /var/lib/docker/apps/zigbee2mqtt:/app/data
+      - /etc/docker/zigbee2mqtt:/app/data
       - /run/udev:/run/udev:ro
     environment:
       - TZ=Europe/Berlin

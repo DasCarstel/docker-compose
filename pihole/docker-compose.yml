@@ -14,8 +14,8 @@ services:
       WEBPASSWORD: psy*WMhjrfhTA.9c6v-4vWNFcVAWmK9F
     # Volumes store your data between container upgrades
     volumes:
-      - /var/lib/docker/apps/pihole/config:/etc/pihole
-      - /var/lib/docker/apps/pihole/dnsmasq.d:/etc/dnsmasq.d
+      - /etc/docker/pihole/config:/etc/pihole
+      - /etc/docker/pihole/dnsmasq.d:/etc/dnsmasq.d
     #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
     #cap_add:
       #- NET_ADMIN # Required if you are using Pi-hole as your DHCP server, else not needed

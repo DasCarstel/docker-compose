@@ -9,8 +9,8 @@ services:
     volumes:
       - /OneDrive:/onedrive/data
       - /OneDrive:/home/onedrive/OneDrive
-      - /var/lib/docker/apps/onedrive-sync:/home/onedrive/.config/onedrive
-      - /var/lib/docker/apps/onedrive-sync:/root/.config/onedrive # not sure if this is needed
+      - /etc/docker/onedrive-sync:/home/onedrive/.config/onedrive
+      - /etc/docker/onedrive-sync:/root/.config/onedrive # not sure if this is needed
     environment:
       - PUID=1000
       - PGID=1000

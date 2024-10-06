@@ -10,7 +10,7 @@ services:
       - WHISPER_BEAM=1 #optional
       - WHISPER_LANG=de #optional
     volumes:
-      - /var/lib/docker/apps/faster-whisper:/config
+      - /etc/docker/faster-whisper:/config
     ports:
       - 10300:10300
     restart: unless-stopped
@@ -29,7 +29,7 @@ services:
       - PIPER_SPEAKER=0 #optional
       - PIPER_PROCS=1 #optional
     volumes:
-      - /var/lib/docker/apps/piper:/config
+      - /etc/docker/piper:/config
     ports:
       - 10200:10200
     restart: unless-stopped

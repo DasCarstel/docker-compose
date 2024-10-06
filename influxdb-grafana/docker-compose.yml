@@ -17,9 +17,9 @@ services:
     volumes:
       # Data persistency
       # sudo mkdir -p /srv/docker/influxdb/data
-      - /var/lib/docker/apps/influxdb:/var/lib/influxdb
-      - /var/lib/docker/apps/influxdb2:/var/lib/influxdb2
-      - /var/lib/docker/apps/influxdb/etc/influxdb2:/etc/influxdb2
+      - /etc/docker/influxdb:/var/lib/influxdb
+      - /etc/docker/influxdb2:/var/lib/influxdb2
+      - /etc/docker/influxdb/etc/influxdb2:/etc/influxdb2
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.influxdb.entrypoints=http"
@@ -52,7 +52,7 @@ services:
     volumes:
       # Data persistency
       # sudo mkdir -p /srv/docker/grafana/data; chown 472:472 /srv/docker/grafana/data
-      - /var/lib/docker/apps/grafana:/var/lib/grafana
+      - /etc/docker/grafana:/var/lib/grafana
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.grafana.entrypoints=http"

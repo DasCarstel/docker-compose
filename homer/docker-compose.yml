@@ -3,7 +3,7 @@ services:
     image: b4bz/homer:latest
     container_name: homer
     volumes:
-      - /var/lib/docker/apps/homer:/www/assets
+      - /etc/docker/homer:/www/assets
     ports:
       - 8181:8080
     environment:

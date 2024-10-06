@@ -10,7 +10,7 @@ services:
       - JELLYFIN_PublishedServerUrl=192.168.0.5 #optional
     #user: uid:gid
     volumes:
-      - /var/lib/docker/apps/jellyfin:/config
+      - /etc/docker/jellyfin:/config
       - type: bind
         source: /Mediathek/Filme
         target: /Filme
