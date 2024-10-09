@@ -7,25 +7,18 @@ services:
       - PGID=1000
       - TZ=Etc/UTC
       - JELLYFIN_PublishedServerUrl=192.168.0.5 #optional
-    #user: uid:gid
     volumes:
       - /etc/docker/jellyfin:/config
-      - type: bind
-        source: /mnt/Mediathek/Filme
-        target: /Filme
-      - type: bind
-        source: /mnt/Mediathek/Serien
-        target: /Serien
-      - type: bind
-        source: /mnt/Mediathek/Anime
-        target: /Anime
+      - /mnt/Mediathek/Filme:/Filme
+      - /mnt/Mediathek/Serien:/Serien
+      - /mnt/Mediathek/Anime:/Anime
     extra_hosts:
       - 'host.docker.internal:host-gateway' # Optional - may be necessary for docker healthcheck to pass if running in host network mode
     ports:
       - 8096:8096
-      - #8920:8920 #optional
-      - 7359:7359/udp #optional
-      - 1900:1900/udp #optional
+      # - 8920:8920 # optional
+      - 7359:7359 #/udp #optional
+      - 1900:1900 #/udp #optional
     restart: unless-stopped
     #runtime: nvidia
     #deploy:
