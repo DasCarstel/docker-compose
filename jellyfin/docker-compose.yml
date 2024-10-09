@@ -11,13 +11,13 @@ services:
     volumes:
       - /etc/docker/jellyfin:/config
       - type: bind
-        source: /Mediathek/Filme
+        source: /mnt/Mediathek/Filme
         target: /Filme
       - type: bind
-        source: /Mediathek/Serien
+        source: /mnt/Mediathek/Serien
         target: /Serien
       - type: bind
-        source: /Mediathek/Anime
+        source: /mnt/Mediathek/Anime
         target: /Anime
     extra_hosts:
       - 'host.docker.internal:host-gateway' # Optional - may be necessary for docker healthcheck to pass if running in host network mode

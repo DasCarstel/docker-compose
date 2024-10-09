@@ -72,7 +72,7 @@ services:
       - /etc/docker/sabnzbd/config:/config
       - /etc/docker/sabnzbd/downloads:/downloads
       - /etc/docker/sabnzbd/incomplete-downloads:/incomplete-downloads
-      - /Mediathek/Downloaded:/Downloaded
+      - /mnt/Mediathek/Downloaded:/Downloaded
     environment:
       - PUID=1000
       - PGID=1000
@@ -91,8 +91,8 @@ services:
       - /etc/docker/sonarr:/config
       - /etc/docker/sabnzbd/downloads:/downloads
       - type: bind
-        source: /Mediathek
-        target: /Mediathek
+        source: /mnt/Mediathek
+        target: /mnt/Mediathek
     environment:
       - PUID=1000
       - PGID=1000
@@ -128,8 +128,8 @@ services:
       - /etc/docker/radarr:/config
       - /etc/docker/sabnzbd/downloads:/downloads
       - type: bind
-        source: /Mediathek
-        target: /Mediathek
+        source: /mnt/Mediathek
+        target: /mnt/Mediathek
     environment:
       - PUID=1000
       - PGID=1000
