@@ -89,10 +89,9 @@ services:
     container_name: sonarr
     volumes:
       - /etc/docker/sonarr:/config
-      - /mnt/sabnzbd/downloads:/downloads
-      - type: bind
-        source: /mnt/Mediathek
-        target: /mnt/Mediathek
+      - /mnt/SABnzbd/downloads/tv:/downloads/tv
+      - /mnt/Mediathek/Serien:/Mediathek/Serien 
+      - /mnt/Mediathek/Anime:/Mediathek/Anime 
     environment:
       - PUID=1000
       - PGID=1000
@@ -126,10 +125,8 @@ services:
     image: lscr.io/linuxserver/radarr:latest
     volumes:
       - /etc/docker/radarr:/config
-      - /mnt/sabnzbd/downloads:/downloads
-      - type: bind
-        source: /mnt/Mediathek
-        target: /mnt/Mediathek
+      - /mnt/SABnzbd/downloads/movies:/downloads/movies
+      - /mnt/Mediathek/Filme:/Mediathek/Filme
     environment:
       - PUID=1000
       - PGID=1000
