@@ -89,7 +89,7 @@ services:
     container_name: sonarr
     volumes:
       - /etc/docker/sonarr:/config
-      - /etc/docker/sabnzbd/downloads:/downloads
+      - /mnt/sabnzbd/downloads:/downloads
       - type: bind
         source: /mnt/Mediathek
         target: /mnt/Mediathek
@@ -126,7 +126,7 @@ services:
     image: lscr.io/linuxserver/radarr:latest
     volumes:
       - /etc/docker/radarr:/config
-      - /etc/docker/sabnzbd/downloads:/downloads
+      - /mnt/sabnzbd/downloads:/downloads
       - type: bind
         source: /mnt/Mediathek
         target: /mnt/Mediathek
