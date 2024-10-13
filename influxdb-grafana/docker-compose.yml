@@ -17,9 +17,9 @@ services:
     volumes:
       # Data persistency
       # sudo mkdir -p /srv/docker/influxdb/data
-      - /etc/docker/influxdb:/var/lib/influxdb
+      #- /etc/docker/influxdb:/var/lib/influxdb
       - /etc/docker/influxdb2:/var/lib/influxdb2
-      - /etc/docker/influxdb/etc/influxdb2:/etc/influxdb2
+      #- /etc/docker/influxdb/etc/influxdb2:/etc/influxdb2
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.influxdb.entrypoints=http"
