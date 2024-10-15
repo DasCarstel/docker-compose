@@ -7,6 +7,8 @@ services:
       - 8081:8081
     volumes:
       - /etc/docker/meetube:/downloads
+    environment:
+      DELETE_FILE_ON_TRASHCAN: true #https://github.com/alexta69/metube/issues/108
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.metube.entrypoints=http"
