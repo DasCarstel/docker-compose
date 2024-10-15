@@ -93,6 +93,7 @@ services:
 # documents are written in.
       PAPERLESS_OCR_LANGUAGE: deu
       PAPERLESS_URL: https://paperless-ngx.mueller-nas.de # https://docs.paperless-ngx.com/configuration/#PAPERLESS_URL
+      PAPERLESS_FILENAME_FORMAT: "{document_type}/{correspondent}/{title}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.paperless-ngx.entrypoints=http"
