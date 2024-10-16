@@ -30,6 +30,23 @@ services:
     restart: always
     healthcheck:
       disable: false
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.immich.entrypoints=http"
+      - "traefik.http.routers.immich.rule=Host(`immich.mueller-nas.de`)"
+      - "traefik.http.middlewares.immich-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.immich.middlewares=immich-https-redirect"
+      - "traefik.http.routers.immich-secure.entrypoints=https"
+      - "traefik.http.routers.immich-secure.rule=Host(`immich.mueller-nas.de`)"
+      - "traefik.http.routers.immich-secure.tls=true"
+      - "traefik.http.routers.immich-secure.service=immich"
+      - "traefik.http.services.immich.loadbalancer.server.port=2283"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+      internal:
+    security_opt:
+      - no-new-privileges:true
 
   immich-machine-learning:
     container_name: immich_machine_learning
@@ -46,6 +63,8 @@ services:
     restart: always
     healthcheck:
       disable: false
+    networks:
+      internal:
 
   redis:
     container_name: immich_redis
@@ -53,6 +72,8 @@ services:
     healthcheck:
       test: redis-cli ping || exit 1
     restart: always
+    networks:
+      internal:
 
   database:
     container_name: immich_postgres
@@ -87,6 +108,13 @@ services:
         'wal_compression=on',
       ]
     restart: always
+    networks:
+      internal:
 
 volumes:
   model-cache:
+
+networks:
+  proxy:
+    external: true
+  internal:
