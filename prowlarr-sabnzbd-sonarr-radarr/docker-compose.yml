@@ -1,7 +1,8 @@
 services:
   ###---gluetun---####
   gluetun:
-    image: qmcgaw/gluetun
+    #image: qmcgaw/gluetun
+    image: ghcr.io/qdm12/gluetun:v3.39 #https://github.com/qdm12/gluetun/issues/2442
     container_name: gluetun
     cap_add:
       - NET_ADMIN
