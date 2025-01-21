@@ -46,6 +46,17 @@ services:
       #- "traefik.http.routers.traefik-secure.tls.domains[0].main=nas.mueller-nas.de" # If you want *.home.yourdomain.co.uk subdomain or something else, you have to get the certifcates at first
       #- "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.nas.mueller-nas.de" # get a wildcard certificat for your .home.yourdomain.co.uk
       - "traefik.http.routers.traefik-secure.service=api@internal"
+
+  tunnel:
+    container_name: cloudflared-tunnel
+    image: cloudflare/cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    networks:
+      - proxy
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+
 networks:
   proxy:
     external: true
