@@ -25,6 +25,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.librespeed.entrypoints=http"
       - "traefik.http.routers.librespeed.rule=Host(`librespeed.mueller-nas.de`)"
+      - "traefik.http.routers.librespeed.entrypoints=websecure"
       - "traefik.http.middlewares.librespeed-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.librespeed.middlewares=librespeed-https-redirect"
       - "traefik.http.routers.librespeed-secure.entrypoints=https"
