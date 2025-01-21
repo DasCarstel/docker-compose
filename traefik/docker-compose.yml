@@ -6,7 +6,8 @@ services:
     security_opt:
       - no-new-privileges:true
     networks:
-       proxy:
+      internal:
+      proxy:
         ipv4_address: 192.168.80.80 # static ip for homeassistant use -> big last number to get this ip every time
     ports:
       - 80:80
@@ -57,6 +58,42 @@ services:
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
 
+  cloudflare-companion:
+    image: ghcr.io/tiredofit/docker-traefik-cloudflare-companion:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    environment:
+      - TIMEZONE=Europe/Berlin
+
+      - LOG_TYPE=CONSOLE
+      - LOG_LEVEL=INFO
+
+      - TRAEFIK_VERSION=2
+      - RC_TYPE=CNAME
+
+      - TARGET_DOMAIN=${ROOT_DOMAIN}
+      - REFRESH_ENTRIES=TRUE
+
+      - DOCKER_SWARM_MODE=FALSE
+
+      - ENABLE_TRAEFIK_POLL=TRUE
+      - TRAEFIK_POLL_URL=https://traefik.${ROOT_DOMAIN}/api
+      - TRAEFIK_FILTER_LABEL=traefik.constraint
+      - TRAEFIK_FILTER=proxy-public
+      - DOMAIN1=${ROOT_DOMAIN}
+      - DOMAIN1_ZONE_ID=${ZONE_ID}
+      - DOMAIN1_PROXIED=TRUE
+
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN} 
+    restart: always
+    networks:
+      - internal
+
 networks:
   proxy:
     external: true
+  internal:
