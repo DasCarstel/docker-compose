@@ -122,7 +122,7 @@ services:
       - "traefik.http.routers.authelia-secure.rule=Host(`authelia.mueller-nas.de`)"
       - "traefik.http.routers.authelia-secure.tls=true"
       - "traefik.http.routers.authelia-secure.service=authelia"
-      - 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://authelia.mueller-nas,de'
+      - 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://authelia.mueller-nas.de'
       - 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
       - 'traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name,Remote-Email'
       - "traefik.http.services.authelia.loadbalancer.server.port=9091"
