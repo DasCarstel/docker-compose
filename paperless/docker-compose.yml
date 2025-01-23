@@ -106,6 +106,7 @@ services:
       - "traefik.http.routers.paperless-ngx-secure.service=paperless-ngx"
       - "traefik.http.services.paperless-ngx.loadbalancer.server.port=8000"
       - "traefik.docker.network=proxy"
+      - "traefik.http.routers.paperless-ngx-secure.middlewares=authelia@docker" # This is for Authelia middlewware
     networks:
       proxy:
       internal:
