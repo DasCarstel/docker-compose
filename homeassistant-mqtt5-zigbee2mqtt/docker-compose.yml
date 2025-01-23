@@ -51,8 +51,11 @@ services:
       - TZ=Europe/Berlin
     restart: unless-stopped
     networks:
+      #proxy:
       mqqtnetwork:
         ipv4_address: 172.41.0.5
+    #security_opt:
+      #- no-new-privileges:true
 
   
 ###---zigbee2mqtt---####
