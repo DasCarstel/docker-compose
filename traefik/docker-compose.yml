@@ -121,7 +121,6 @@ services:
       - "traefik.http.routers.authelia-secure.entrypoints=https"
       - "traefik.http.routers.authelia-secure.rule=Host(`authelia.mueller-nas.de`)"
       - "traefik.http.routers.authelia-secure.tls=true"
-      - 'traefik.http.routers.authelia-secure.tls.certresolver=myresolver'
       - "traefik.http.routers.authelia-secure.service=authelia"
       - 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://authelia.mueller-nas,de'
       - 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
