@@ -114,14 +114,20 @@ services:
       - TZ=Europe/Berlin
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.authelia.rule=Host(`auth.${ROOT_DOMAIN}`)'
-      - 'traefik.http.routers.authelia.entrypoints=websecure'
-      - 'traefik.http.routers.authelia.tls=true'
-      - 'traefik.http.routers.authelia.tls.certresolver=myresolver'
-      - 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://auth.${ROOT_DOMAIN}'
+      - "traefik.http.routers.authelia.entrypoints=http"
+      - "traefik.http.routers.authelia.rule=Host(`authelia.mueller-nas.de`)"
+      - "traefik.http.middlewares.authelia-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.authelia.middlewares=authelia-https-redirect"
+      - "traefik.http.routers.authelia-secure.entrypoints=https"
+      - "traefik.http.routers.authelia-secure.rule=Host(`authelia.mueller-nas.de`)"
+      - "traefik.http.routers.authelia-secure.tls=true"
+      - 'traefik.http.routers.authelia-secure.tls.certresolver=myresolver'
+      - "traefik.http.routers.authelia-secure.service=authelia"
+      - 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia:9091/api/verify?rd=https://authelia.mueller-nas,de'
       - 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
       - 'traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name,Remote-Email'
-
+      - "traefik.http.services.authelia.loadbalancer.server.port=9091"
+      - "traefik.docker.network=proxy"
 networks:
   proxy:
     external: true
