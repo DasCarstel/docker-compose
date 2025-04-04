@@ -19,6 +19,7 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
+      # Erste Domain: homeassistant.mueller-nas.de
       - "traefik.http.routers.homeassistant.entrypoints=http"
       - "traefik.http.routers.homeassistant.rule=Host(`homeassistant.mueller-nas.de`)"
       - "traefik.http.middlewares.homeassistant-https-redirect.redirectscheme.scheme=https"
@@ -27,6 +28,16 @@ services:
       - "traefik.http.routers.homeassistant-secure.rule=Host(`homeassistant.mueller-nas.de`)"
       - "traefik.http.routers.homeassistant-secure.tls=true"
       - "traefik.http.routers.homeassistant-secure.service=homeassistant"
+      # Zweite Domain: intern-homeassistant.mueller-nas.de (mit Bindestrich statt Punkt)
+      - "traefik.http.routers.intern.entrypoints=http"
+      - "traefik.http.routers.intern.rule=Host(`intern-homeassistant.mueller-nas.de`)"
+      - "traefik.http.middlewares.intern-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.intern.middlewares=intern-https-redirect"
+      - "traefik.http.routers.intern-secure.entrypoints=https"
+      - "traefik.http.routers.intern-secure.rule=Host(`intern-homeassistant.mueller-nas.de`)"
+      - "traefik.http.routers.intern-secure.tls=true"
+      - "traefik.http.routers.intern-secure.service=homeassistant"
+      # Gemeinsame Konfiguration
       - "traefik.http.services.homeassistant.loadbalancer.server.port=8123"
       - "traefik.docker.network=proxy"
       #- "traefik.http.routers.homeassistant-secure.middlewares=authelia@docker"
