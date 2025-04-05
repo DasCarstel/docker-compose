@@ -53,6 +53,14 @@ services:
     security_opt:
       - no-new-privileges:true
 
+volumes:
+  Mediathek_nfs:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.0.10.30,rw,nfsvers=4"   # Ersetze 10.0.10.30 mit der IP deines NFS-Servers sowie ggf. zusätzliche Optionen
+      device: ":/mnt/Pool-HDD/Mediathek"  # Ersetze dies mit dem Pfad deines freigegebenen Verzeichnisses vom NFS-Server
+
 networks:
   proxy:
     external: true
