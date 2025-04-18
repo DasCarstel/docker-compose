@@ -1,0 +1,35 @@
+services:
+  seanime:
+    image: umagistr/seanime
+    container_name: seanime
+    ports:
+      - 43211:43211
+    volumes:
+      - /mnt/Mediathek/Anime:/Anime
+      # - /mnt/user/downloads:/downloads
+      - /etc/docker/seanime:/root/.config/Seanime
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seanime.entrypoints=http"
+      - "traefik.http.routers.seanime.rule=Host(`seanime.mueller-nas.de`)"
+      - "traefik.http.middlewares.seanime-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.seanime.middlewares=seanime-https-redirect"
+      - "traefik.http.routers.seanime-secure.entrypoints=https"
+      - "traefik.http.routers.seanime-secure.rule=Host(`seanime.mueller-nas.de`)"
+      - "traefik.http.routers.seanime-secure.tls=true"
+      - "traefik.http.routers.seanime-secure.service=seanime"
+      - "traefik.http.services.seanime.loadbalancer.server.port=43211"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+
+networks:
+  proxy:
+    external: true
