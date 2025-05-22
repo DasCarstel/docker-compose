@@ -92,7 +92,8 @@ services:
 # The default language to use for OCR. Set this to the language most of your
 # documents are written in.
       PAPERLESS_OCR_LANGUAGE: deu
-      PAPERLESS_URL: https://paperless-ngx.mueller-nas.de # https://docs.paperless-ngx.com/configuration/#PAPERLESS_URL
+      PAPERLESS_URL: https://paperless-ngx.mueller-nas.de
+      PAPERLESS_CSRF_TRUSTED_ORIGINS: "https://paperless-ngx.mueller-nas.de,https://intern-paperless-ngx.mueller-nas.de"
       PAPERLESS_FILENAME_FORMAT: "{document_type}/{correspondent}/{title}"
     labels:
       - "traefik.enable=true"
