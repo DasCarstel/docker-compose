@@ -96,6 +96,7 @@ services:
       PAPERLESS_FILENAME_FORMAT: "{document_type}/{correspondent}/{title}"
     labels:
       - "traefik.enable=true"
+      # Erste Domain: paperless-ngx.mueller-nas.de
       - "traefik.http.routers.paperless-ngx.entrypoints=http"
       - "traefik.http.routers.paperless-ngx.rule=Host(`paperless-ngx.mueller-nas.de`)"
       - "traefik.http.middlewares.paperless-ngx-https-redirect.redirectscheme.scheme=https"
@@ -104,9 +105,19 @@ services:
       - "traefik.http.routers.paperless-ngx-secure.rule=Host(`paperless-ngx.mueller-nas.de`)"
       - "traefik.http.routers.paperless-ngx-secure.tls=true"
       - "traefik.http.routers.paperless-ngx-secure.service=paperless-ngx"
+      - "traefik.http.routers.paperless-ngx-secure.middlewares=authelia@docker" # This is for Authelia middlewware
+      # Zweite Domain: intern-paperless-ngx.mueller-nas.de (mit Bindestrich statt Punkt)
+      - "traefik.http.routers.intern-paperless.entrypoints=http"
+      - "traefik.http.routers.intern-paperless.rule=Host(`intern-paperless-ngx.mueller-nas.de`)"
+      - "traefik.http.middlewares.intern-paperless-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.intern-paperless.middlewares=intern-paperless-https-redirect"
+      - "traefik.http.routers.intern-paperless-secure.entrypoints=https"
+      - "traefik.http.routers.intern-paperless-secure.rule=Host(`intern-paperless-ngx.mueller-nas.de`)"
+      - "traefik.http.routers.intern-paperless-secure.tls=true"
+      - "traefik.http.routers.intern-paperless-secure.service=paperless-ngx"
+      # Gemeinsame Konfiguration
       - "traefik.http.services.paperless-ngx.loadbalancer.server.port=8000"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.paperless-ngx-secure.middlewares=authelia@docker" # This is for Authelia middlewware
     networks:
       proxy:
       internal:
