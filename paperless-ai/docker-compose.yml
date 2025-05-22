@@ -1,0 +1,40 @@
+services:
+  paperless-ai:
+    image: clusterzx/paperless-ai
+    container_name: paperless-ai
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - PAPERLESS_AI_PORT=3004
+      - RAG_SERVICE_URL=http://localhost:8000
+      - RAG_SERVICE_ENABLED=true
+    ports:
+      - "3004:3004"
+    volumes:
+      - /etc/docker/paperless-ai:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.paperless-ai.entrypoints=http"
+      - "traefik.http.routers.paperless-ai.rule=Host(`paperless-ai.mueller-nas.de`)"
+      - "traefik.http.middlewares.paperless-ai-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.paperless-ai.middlewares=paperless-ai-https-redirect"
+      - "traefik.http.routers.paperless-ai-secure.entrypoints=https"
+      - "traefik.http.routers.paperless-ai-secure.rule=Host(`paperless-ai.mueller-nas.de`)"
+      - "traefik.http.routers.paperless-ai-secure.tls=true"
+      - "traefik.http.routers.paperless-ai-secure.service=paperless-ai"
+      - "traefik.http.services.paperless-ai.loadbalancer.server.port=3004"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+      ollama:
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
+  ollama:
+    external: true
