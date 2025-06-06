@@ -1,0 +1,39 @@
+services:
+  couchdb:
+    image: couchdb:latest
+    container_name: obsidian-livesync-couchdb
+    restart: unless-stopped
+    user: 1000:1000
+    environment:
+      - COUCHDB_USER=${COUCHDB_USER}
+      - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
+      - hostname=https://obsidian-livesync.mueller-nas.de
+      - username=${COUCHDB_USER}
+      - password=${COUCHDB_PASSWORD}
+    ports:
+      - 5984:5984
+    volumes:
+      - /etc/docker/obsidian-livesync/data:/opt/couchdb/data
+      - /etc/docker/obsidian-livesync/etc:/opt/couchdb/etc/local.d
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.obsidian-livesync.entrypoints=http"
+      - "traefik.http.routers.obsidian-livesync.rule=Host(`obsidian-livesync.mueller-nas.de`)"
+      # - "traefik.http.routers.obsidian-livesync.entrypoints=websecure"
+      - "traefik.http.middlewares.obsidian-livesync-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.obsidian-livesync.middlewares=obsidian-livesync-https-redirect"
+      - "traefik.http.routers.obsidian-livesync-secure.entrypoints=https"
+      - "traefik.http.routers.obsidian-livesync-secure.rule=Host(`obsidian-livesync.mueller-nas.de`)"
+      - "traefik.http.routers.obsidian-livesync-secure.tls=true"
+      - "traefik.http.routers.obsidian-livesync-secure.service=obsidian-livesync"
+      - "traefik.http.services.obsidian-livesync.loadbalancer.server.port=5984"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
+    # command: curl -s https://raw.githubusercontent.com/vrtmrz/obsidian-livesync/main/utils/couchdb/couchdb-init.sh | bash
+
+networks:
+  proxy:
+    external: true
