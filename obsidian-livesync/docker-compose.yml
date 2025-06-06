@@ -17,17 +17,25 @@ services:
       - /etc/docker/obsidian-livesync/etc:/opt/couchdb/etc/local.d
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
       - "traefik.http.routers.obsidian-livesync.entrypoints=http"
       - "traefik.http.routers.obsidian-livesync.rule=Host(`obsidian-livesync.mueller-nas.de`)"
-      # - "traefik.http.routers.obsidian-livesync.entrypoints=websecure"
       - "traefik.http.middlewares.obsidian-livesync-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.obsidian-livesync.middlewares=obsidian-livesync-https-redirect"
       - "traefik.http.routers.obsidian-livesync-secure.entrypoints=https"
       - "traefik.http.routers.obsidian-livesync-secure.rule=Host(`obsidian-livesync.mueller-nas.de`)"
       - "traefik.http.routers.obsidian-livesync-secure.tls=true"
+      - "traefik.http.routers.obsidian-livesync-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.obsidian-livesync-secure.middlewares=obsidiancors"
       - "traefik.http.routers.obsidian-livesync-secure.service=obsidian-livesync"
       - "traefik.http.services.obsidian-livesync.loadbalancer.server.port=5984"
-      - "traefik.docker.network=proxy"
+      # The part needed for CORS to work on Traefik 2.x starts here
+      - "traefik.http.middlewares.obsidiancors.headers.accesscontrolallowmethods=GET,PUT,POST,HEAD,DELETE"
+      - "traefik.http.middlewares.obsidiancors.headers.accesscontrolallowheaders=accept,authorization,content-type,origin,referer"
+      - "traefik.http.middlewares.obsidiancors.headers.accesscontrolalloworiginlist=app://obsidian.md,capacitor://localhost,http://localhost"
+      - "traefik.http.middlewares.obsidiancors.headers.accesscontrolmaxage=3600"
+      - "traefik.http.middlewares.obsidiancors.headers.addvaryheader=true"
+      - "traefik.http.middlewares.obsidiancors.headers.accessControlAllowCredentials=true"
     networks:
       proxy:
     security_opt:
