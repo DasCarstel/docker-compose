@@ -1,0 +1,38 @@
+services:
+  excalidraw:
+    image: excalidraw/excalidraw:latest
+    restart: unless-stopped
+    container_name: excalidraw
+    ports:
+      - "3008:80"
+    stdin_open: true
+    healthcheck:
+      disable: true
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - /etc/docker/excalidraw/app:/opt/node_app/app:delegated
+      - /etc/docker/excalidraw/package.json:/opt/node_app/package.json
+      - /etc/docker/excalidraw/yarn.lock:/opt/node_app/yarn.lock
+      - /etc/docker/excalidraw/notused:/opt/node_app/app/node_modules
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.excalidraw.entrypoints=http"
+      - "traefik.http.routers.excalidraw.rule=Host(`excalidraw.mueller-nas.de`)"
+      # - "traefik.http.routers.excalidraw.entrypoints=websecure"
+      - "traefik.http.middlewares.excalidraw-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.excalidraw.middlewares=excalidraw-https-redirect"
+      - "traefik.http.routers.excalidraw-secure.entrypoints=https"
+      - "traefik.http.routers.excalidraw-secure.rule=Host(`excalidraw.mueller-nas.de`)"
+      - "traefik.http.routers.excalidraw-secure.tls=true"
+      - "traefik.http.routers.excalidraw-secure.service=excalidraw"
+      - "traefik.http.services.excalidraw.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
