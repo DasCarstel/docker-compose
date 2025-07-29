@@ -4,7 +4,10 @@ services:
     ports:
       - 11434:11434
     volumes:
-      - /etc/docker/ollama:/root/.ollama
+      - /etc/docker/ollama/config:/root/.ollama/config
+      - /mnt/ai/ollama/models:/root/.ollama/models
+    environment:
+      - OLLAMA_MODELS=/root/.ollama/models
     container_name: ollama
     tty: true
     restart: unless-stopped
