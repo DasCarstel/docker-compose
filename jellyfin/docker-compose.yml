@@ -9,6 +9,7 @@ services:
       - JELLYFIN_PublishedServerUrl=192.168.0.5 #optional
     volumes:
       - /etc/docker/jellyfin:/config
+      - /mnt/transcode/jellyfin:/config/data/transcodes
       - /mnt/Mediathek/Filme:/Filme
       - /mnt/Mediathek/Serien:/Serien
       - /mnt/Mediathek/Anime:/Anime
