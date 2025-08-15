@@ -40,10 +40,11 @@ services:
     security_opt:
       - no-new-privileges:true
     environment:
-      - VPN_SERVICE_PROVIDER=surfshark
+      - VPN_SERVICE_PROVIDER=nordvpn
       - VPN_TYPE=wireguard
       - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
       - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      - SERVER_COUNTRIES=${SERVER_COUNTRIES}
       - TZ=Europe/Berlin
     networks:
       - mynetwork
