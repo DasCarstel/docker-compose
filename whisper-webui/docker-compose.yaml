@@ -1,0 +1,41 @@
+services:
+  whisper-webui:
+    container_name: whisper-webui
+    build: .
+    image: jhj0517/whisper-webui:v1.0.7-fef3d69
+
+    volumes:
+      - /etc/docker/whisper-webui/models:/Whisper-WebUI/models
+      - /etc/docker/whisper-webui/outputs:/Whisper-WebUI/outputs
+      - /etc/docker/whisper-webui/configs:/Whisper-WebUI/configs
+
+    ports:
+      - "7860:7860"
+
+    stdin_open: true
+    tty: true
+
+    entrypoint: ["python", "app.py", "--server_port", "7860", "--server_name", "0.0.0.0",]
+
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whisper-webui.entrypoints=http"
+      - "traefik.http.routers.whisper-webui.rule=Host(`whisper-webui.mueller-nas.de`)"
+      - "traefik.http.middlewares.whisper-webui-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.whisper-webui.middlewares=whisper-webui-https-redirect"
+      - "traefik.http.routers.whisper-webui-secure.entrypoints=https"
+      - "traefik.http.routers.whisper-webui-secure.rule=Host(`whisper-webui.mueller-nas.de`)"
+      - "traefik.http.routers.whisper-webui-secure.tls=true"
+      - "traefik.http.routers.whisper-webui-secure.service=whisper-webui"
+      - "traefik.http.routers.whisper-webui-secure.middlewares=authelia@docker"
+      - "traefik.http.services.whisper-webui.loadbalancer.server.port=7860"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
