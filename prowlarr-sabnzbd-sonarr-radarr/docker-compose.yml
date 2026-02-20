@@ -22,6 +22,7 @@ services:
       - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.mueller-nas.de`)"
       - "traefik.http.middlewares.prowlarr-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.prowlarr.middlewares=prowlarr-https-redirect"
+      - "traefik.http.routers.prowlarr.service=prowlarr" # Traefik konnte Router nicht zuordnen (prowlarr + sabnzbd teilen sich gluetun-Container)
       - "traefik.http.routers.prowlarr-secure.entrypoints=https"
       - "traefik.http.routers.prowlarr-secure.rule=Host(`prowlarr.mueller-nas.de`)"
       - "traefik.http.routers.prowlarr-secure.tls=true"
@@ -31,6 +32,7 @@ services:
       - "traefik.http.routers.sabnzbd.rule=Host(`sabnzbd.mueller-nas.de`)"
       - "traefik.http.middlewares.sabnzbd-https-redirect.redirectscheme.scheme=https"
       - "traefik.http.routers.sabnzbd.middlewares=sabnzbd-https-redirect"
+      - "traefik.http.routers.sabnzbd.service=sabnzbd" # Traefik konnte Router nicht zuordnen (prowlarr + sabnzbd teilen sich gluetun-Container)
       - "traefik.http.routers.sabnzbd-secure.entrypoints=https"
       - "traefik.http.routers.sabnzbd-secure.rule=Host(`sabnzbd.mueller-nas.de`)"
       - "traefik.http.routers.sabnzbd-secure.tls=true"
