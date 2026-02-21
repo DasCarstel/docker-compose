@@ -1,16 +1,16 @@
 #---------------------------------------------------------------------#
-#     Homarr - A simple, yet powerful dashboard for your server.     #
+#     Homarr v1.0 - A simple, yet powerful dashboard for your server.     #
 #---------------------------------------------------------------------#
 services:
   homarr:
     container_name: homarr
-    image: ghcr.io/ajnart/homarr:latest
+    image: ghcr.io/homarr-labs/homarr:latest
     restart: unless-stopped
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # Optional, only if you want docker integration
-      - /etc/docker/homarr/configs:/app/data/configs
-      - /etc/docker/homarr/icons:/app/public/icons
-      - /etc/docker/homarr/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/docker/homarr-v1/appdata:/appdata
+    env_file:
+      - .env
     ports:
       - '7575:7575'
     labels:
@@ -26,7 +26,7 @@ services:
       - "traefik.http.services.homarr.loadbalancer.server.port=7575"
       - "traefik.docker.network=proxy"
     networks:
-      proxy:
+      - proxy
     security_opt:
       - no-new-privileges:true
 
