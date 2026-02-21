@@ -30,6 +30,7 @@ services:
       - 8089:80
     volumes:
       - /etc/docker/nextcloud/data:/var/www/html:z
+      - /mnt/nextcloud/data:/var/www/html/data:z # Nur Datei wie Obsidian-Dokumente soll auf mount gespeichert werden
       # NOTE: The `volumes` config of the `cron` and `app` containers must match
     environment:
       - POSTGRES_HOST=db
@@ -63,6 +64,7 @@ services:
     restart: always
     volumes:
       - /etc/docker/nextcloud/data:/var/www/html:z
+      - /mnt/nextcloud/data:/var/www/html/data:z
       # NOTE: The `volumes` config of the `cron` and `app` containers must match
     entrypoint: /cron.sh
     depends_on:
