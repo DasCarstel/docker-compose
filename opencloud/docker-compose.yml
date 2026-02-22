@@ -1,4 +1,11 @@
 services:
+  tika:
+    image: apache/tika:latest
+    container_name: opencloud-tika
+    networks:
+      - opencloud-net
+    restart: always
+
   opencloud:
     image: opencloudeu/opencloud-rolling:latest
     container_name: opencloud
@@ -10,11 +17,15 @@ services:
       - IDM_ADMIN_PASSWORD=admin1234
       - PROXY_TLS=false
       - OC_LOG_LEVEL=info
+      - SEARCH_EXTRACTOR_TYPE=tika
+      - SEARCH_EXTRACTOR_TIKA_TIKA_URL=http://tika:9998
+      - FRONTEND_FULL_TEXT_SEARCH_ENABLED=true
     volumes:
       - /etc/docker/opencloud/config:/etc/opencloud
       - /mnt/opencloud-data:/var/lib/opencloud
     networks:
       - proxy
+      - opencloud-net
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.opencloud.entrypoints=https"
@@ -26,3 +37,6 @@ services:
 networks:
   proxy:
     external: true
+  opencloud-net:
+    external: true
+    name: opencloud_opencloud-net
