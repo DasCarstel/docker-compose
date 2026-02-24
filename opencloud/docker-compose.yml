@@ -39,4 +39,3 @@ networks:
     external: true
   opencloud-net:
     external: true
-    name: opencloud_opencloud-net
