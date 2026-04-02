@@ -6,7 +6,7 @@ services:
     networks:
       - proxy
     volumes:
-      - /opt/vaultwarden:/data
+      - /etc/docker/vaultwarden:/data
     environment:
      #- ROCKET_TLS={certs="/ssl/certs/certs.pem",key="/ssl/private/key.pem"}  // Environment variable is specific to the Rocket web server
      - ADMIN_TOKEN=${ADMIN_TOKEN}
