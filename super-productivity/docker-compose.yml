@@ -1,0 +1,58 @@
+services:
+  app:
+    image: johannesjo/super-productivity:latest
+    restart: unless-stopped
+    expose:
+      - "80"
+    environment:
+      - WEBDAV_BASE_URL=http://webdav:2345/
+      - WEBDAV_USERNAME=admin
+      - WEBDAV_PASSWORD=admin
+      - WEBDAV_SYNC_FOLDER_PATH=/
+      - SYNC_INTERVAL=15
+      - IS_COMPRESSION_ENABLED=true
+      - IS_ENCRYPTION_ENABLED=false
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.superproductivity.entrypoints=http"
+      - "traefik.http.routers.superproductivity.rule=Host(`superproductivity.mueller-nas.de`)"
+      - "traefik.http.middlewares.superproductivity-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.superproductivity.middlewares=superproductivity-https-redirect"
+      - "traefik.http.routers.superproductivity-secure.entrypoints=https"
+      - "traefik.http.routers.superproductivity-secure.rule=Host(`superproductivity.mueller-nas.de`)"
+      - "traefik.http.routers.superproductivity-secure.tls=true"
+      - "traefik.http.routers.superproductivity-secure.service=superproductivity"
+      - "traefik.http.routers.superproductivity-secure.middlewares=authelia@docker"
+      - "traefik.http.services.superproductivity.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+    depends_on:
+      - webdav
+
+  webdav:
+    image: hacdias/webdav:v5
+    restart: unless-stopped
+    expose:
+      - "2345"
+    volumes:
+      - ./webdav.yaml:/etc/webdav/config.yaml:ro
+      - /etc/docker/superproductivity:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.webdav.entrypoints=http"
+      - "traefik.http.routers.webdav.rule=Host(`webdav-superproductivity.mueller-nas.de`)"
+      - "traefik.http.middlewares.webdav-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.webdav.middlewares=webdav-https-redirect"
+      - "traefik.http.routers.webdav-secure.entrypoints=https"
+      - "traefik.http.routers.webdav-secure.rule=Host(`webdav-superproductivity.mueller-nas.de`)"
+      - "traefik.http.routers.webdav-secure.tls=true"
+      - "traefik.http.routers.webdav-secure.service=webdav"
+      - "traefik.http.services.webdav.loadbalancer.server.port=2345"
+      - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
