@@ -1,41 +1,40 @@
+---
 services:
-  tika:
-    image: apache/tika:latest
-    container_name: opencloud-tika
-    networks:
-      - opencloud-net
-    restart: always
-
   opencloud:
-    image: opencloudeu/opencloud-rolling:latest
-    container_name: opencloud
-    user: "1000:1000"
-    restart: unless-stopped
-    environment:
-      - OC_URL=https://opencloud.mueller-nas.de
-      - OC_INSECURE=true
-      - IDM_ADMIN_PASSWORD=admin1234
-      - PROXY_TLS=false
-      - OC_LOG_LEVEL=info
-      - SEARCH_EXTRACTOR_TYPE=tika
-      - SEARCH_EXTRACTOR_TIKA_TIKA_URL=http://tika:9998
-      - FRONTEND_FULL_TEXT_SEARCH_ENABLED=true
-    volumes:
-      - /etc/docker/opencloud/config:/etc/opencloud
-      - /mnt/opencloud-data:/var/lib/opencloud
+    image: ${OC_DOCKER_IMAGE:-opencloudeu/opencloud-rolling}:${OC_DOCKER_TAG:-6.0.0}
+    user: ${OC_CONTAINER_UID_GID:-1000:1000}
     networks:
       - proxy
       - opencloud-net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.opencloud.entrypoints=https"
-      - "traefik.http.routers.opencloud.rule=Host(`opencloud.mueller-nas.de`)"
-      - "traefik.http.routers.opencloud.tls.certresolver=cloudflare"
-      - "traefik.http.services.opencloud.loadbalancer.server.port=9200"
-      - "traefik.docker.network=proxy"
+    entrypoint:
+      - /bin/sh
+    command: ["-c", "opencloud init || true; opencloud server"]
+    environment:
+      OC_ADD_RUN_SERVICES: ${START_ADDITIONAL_SERVICES}
+      OC_URL: https://${OC_DOMAIN:-cloud.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
+      OC_LOG_LEVEL: ${LOG_LEVEL:-info}
+      PROXY_TLS: "false"
+      OC_INSECURE: "${INSECURE:-false}"
+      PROXY_ENABLE_BASIC_AUTH: "${PROXY_ENABLE_BASIC_AUTH:-false}"
+      IDM_CREATE_DEMO_USERS: "${DEMO_USERS:-false}"
+      IDM_ADMIN_PASSWORD: "${INITIAL_ADMIN_PASSWORD}"
+      FRONTEND_ARCHIVER_MAX_SIZE: "10000000000"
+      FRONTEND_CHECK_FOR_UPDATES: "${CHECK_FOR_UPDATES:-true}"
+      PROXY_CSP_CONFIG_FILE_LOCATION: /etc/opencloud/csp.yaml
+      OC_PASSWORD_POLICY_BANNED_PASSWORDS_LIST: banned-password-list.txt
+    volumes:
+      - /etc/docker/opencloud/config:/etc/opencloud
+      - /mnt/opencloud-data:/var/lib/opencloud
+      - ./config/opencloud/apps:/var/lib/opencloud/web/assets/apps
+    logging:
+      driver: ${LOG_DRIVER:-local}
+    restart: always
+
+volumes:
+  opencloud-config:
+  opencloud-data:
 
 networks:
-  proxy:
-    external: true
   opencloud-net:
+  proxy:
     external: true
