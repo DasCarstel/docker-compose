@@ -1,0 +1,133 @@
+services:
+  web:
+    image: docker.io/wger/server:latest
+    depends_on:
+      db:
+        condition: service_healthy
+      cache:
+        condition: service_healthy
+    env_file:
+      - /etc/docker/wger/config/prod.env
+    volumes:
+      - /etc/docker/wger/static:/home/wger/static
+      - /etc/docker/wger/media:/home/wger/media
+    expose:
+      - "8000"
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: 5
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000"]
+      interval: 10s
+      timeout: 5s
+      start_period: 300s
+      retries: 5
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wger.entrypoints=http"
+      - "traefik.http.routers.wger.rule=Host(`wger.mueller-nas.de`)"
+      - "traefik.http.middlewares.wger-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.wger.middlewares=wger-https-redirect"
+      - "traefik.http.routers.wger-secure.entrypoints=https"
+      - "traefik.http.routers.wger-secure.rule=Host(`wger.mueller-nas.de`)"
+      - "traefik.http.routers.wger-secure.tls=true"
+      - "traefik.http.routers.wger-secure.service=wger"
+      - "traefik.http.services.wger.loadbalancer.server.port=8000"
+      - "traefik.docker.network=proxy"
+    networks:
+      - default
+      - proxy
+    security_opt:
+      - no-new-privileges:true
+
+  db:
+    image: docker.io/postgres:15-alpine
+    environment:
+      - POSTGRES_USER=wger
+      - POSTGRES_PASSWORD=wger
+      - POSTGRES_DB=wger
+      - TZ=Europe/Berlin
+    volumes:
+      - /etc/docker/wger/postgres-data:/var/lib/postgresql/data/
+    expose:
+      - "5432"
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: 5
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "wger"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  cache:
+    image: docker.io/redis
+    expose:
+      - "6379"
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: 5
+    volumes:
+      - /etc/docker/wger/config/redis.conf:/usr/local/etc/redis/redis.conf
+      - /etc/docker/wger/redis-data:/data
+    command: redis-server
+    healthcheck:
+      test: redis-cli ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  celery_worker:
+    image: docker.io/wger/server:latest
+    command: /start-worker
+    env_file:
+      - /etc/docker/wger/config/prod.env
+    volumes:
+      - /etc/docker/wger/media:/home/wger/media
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: 5
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "celery", "-A", "wger", "inspect", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  celery_beat:
+    image: docker.io/wger/server:latest
+    command: /start-beat
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: 5
+    volumes:
+      - /etc/docker/wger/celery-beat:/home/wger/beat/
+    env_file:
+      - /etc/docker/wger/config/prod.env
+    depends_on:
+      celery_worker:
+        condition: service_healthy
+    restart: unless-stopped
+
+networks:
+  proxy:
+    external: true
