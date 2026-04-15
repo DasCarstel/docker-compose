@@ -1,0 +1,28 @@
+services:
+  stirling-pdf:
+    image: stirlingtools/stirling-pdf:latest
+    container_name: stirling-pdf
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - /etc/docker/stirling-pdf/configs:/configs
+      - /etc/docker/stirling-pdf/tessdata:/usr/share/tessdata
+      - /etc/docker/stirling-pdf/logs:/logs
+      - /etc/docker/stirling-pdf/pipeline:/pipeline
+    environment:
+      - SECURITY_ENABLELOGIN=true
+      - LANGS=de_DE
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.stirling-pdf.rule=Host(`stirling-pdf.mueller-nas.de`)"
+      - "traefik.http.routers.stirling-pdf.entrypoints=https"
+      - "traefik.http.routers.stirling-pdf.tls=true"
+      - "traefik.http.routers.stirling-pdf.tls.certresolver=cloudflare"
+      - "traefik.http.routers.stirling-pdf.middlewares=authelia@docker"
+      - "traefik.http.services.stirling-pdf.loadbalancer.server.port=8080"
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    external: true
