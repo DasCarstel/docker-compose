@@ -1,0 +1,36 @@
+  shoko_server:
+    image: ghcr.io/shokoanime/server:latest
+    container_name: shoko_server
+    restart: unless-stopped
+    shm_size: 256m
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+    ports:
+      - 8111:8111
+    volumes:
+      - /etc/docker/shoko-config:/home/shoko/.shoko
+      - /mnt/Mediathek/Anime:/mnt/anime
+      - /mnt/Mediathek/Serien:/mnt/serien
+      - /mnt/Mediathek/Filme:/mnt/filme
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.shoko_server.entrypoints=http"
+      - "traefik.http.routers.shoko_server.rule=Host(`shoko.mueller-nas.de`)"
+      - "traefik.http.middlewares.shoko_server-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.shoko_server.middlewares=shoko_server-https-redirect"
+      - "traefik.http.routers.shoko_server-secure.entrypoints=https"
+      - "traefik.http.routers.shoko_server-secure.rule=Host(`shoko.mueller-nas.de`)"
+      - "traefik.http.routers.shoko_server-secure.tls=true"
+      - "traefik.http.routers.shoko_server-secure.service=shoko_server"
+      - "traefik.http.services.shoko_server.loadbalancer.server.port=8111"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+    security_opt:
+      - no-new-privileges:true
+
+  networks:
+    proxy:
+      external: true
