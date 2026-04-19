@@ -6,6 +6,8 @@ services:
     volumes:
       - /etc/docker/koreader-sync/data:/var/lib/redis
       - /etc/docker/koreader-sync/logs:/app/koreader-sync-server/logs
+    environment:
+      - ENABLE_USER_REGISTRATION=false # Disable user registration for security, needs to be set to true if you want to create new or the first users
     networks:
       - proxy
     labels:
