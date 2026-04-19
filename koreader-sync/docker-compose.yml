@@ -1,0 +1,22 @@
+services:
+  koreader-sync:
+    image: koreader/kosync:latest
+    container_name: koreader-sync
+    restart: unless-stopped
+    volumes:
+      - /etc/docker/koreader-sync/data:/var/lib/redis
+      - /etc/docker/koreader-sync/logs:/app/koreader-sync-server/logs
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.koreader-sync.rule=Host(`koreader-sync.mueller-nas.de`)"
+      - "traefik.http.routers.koreader-sync.entrypoints=https"
+      - "traefik.http.routers.koreader-sync.tls=true"
+      - "traefik.http.routers.koreader-sync.tls.certresolver=cloudflare"
+      - "traefik.http.services.koreader-sync.loadbalancer.server.port=17200"
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    external: true
