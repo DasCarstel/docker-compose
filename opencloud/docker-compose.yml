@@ -1,40 +1,148 @@
----
 services:
+  # --------------------------------------------------------
+  # 1. OPENCLOUD CORE SERVER
+  # --------------------------------------------------------
   opencloud:
-    image: ${OC_DOCKER_IMAGE:-opencloudeu/opencloud-rolling}:${OC_DOCKER_TAG:-6.0.0}
-    user: ${OC_CONTAINER_UID_GID:-1000:1000}
-    networks:
-      - proxy
-      - opencloud-net
-    entrypoint:
-      - /bin/sh
-    command: ["-c", "opencloud init || true; opencloud server"]
-    environment:
-      OC_ADD_RUN_SERVICES: ${START_ADDITIONAL_SERVICES}
-      OC_URL: https://${OC_DOMAIN:-cloud.opencloud.test}${TRAEFIK_PORT_HTTPS:+:}${TRAEFIK_PORT_HTTPS:-}
-      OC_LOG_LEVEL: ${LOG_LEVEL:-info}
-      PROXY_TLS: "false"
-      OC_INSECURE: "${INSECURE:-false}"
-      PROXY_ENABLE_BASIC_AUTH: "${PROXY_ENABLE_BASIC_AUTH:-false}"
-      IDM_CREATE_DEMO_USERS: "${DEMO_USERS:-false}"
-      IDM_ADMIN_PASSWORD: "${INITIAL_ADMIN_PASSWORD}"
-      FRONTEND_ARCHIVER_MAX_SIZE: "10000000000"
-      FRONTEND_CHECK_FOR_UPDATES: "${CHECK_FOR_UPDATES:-true}"
-      PROXY_CSP_CONFIG_FILE_LOCATION: /etc/opencloud/csp.yaml
-      OC_PASSWORD_POLICY_BANNED_PASSWORDS_LIST: banned-password-list.txt
-    volumes:
-      - /etc/docker/opencloud/config:/etc/opencloud
-      - /mnt/opencloud-data:/var/lib/opencloud
-      - ./config/opencloud/apps:/var/lib/opencloud/web/assets/apps
-    logging:
-      driver: ${LOG_DRIVER:-local}
+    image: opencloudeu/opencloud-rolling:6.0.0
+    container_name: opencloud
     restart: always
+    entrypoint: ["/bin/sh"]
+    command: ["-c", "opencloud init || true; opencloud server"]
+    networks:
+      - opencloud-net
+      - proxy
+    volumes:
+      - /etc/docker/opencloud/config:/etc/opencloud:rw
+      - /mnt/opencloud-data:/var/lib/opencloud:rw
+      - /opt/docker-compose/opencloud/config/opencloud/apps:/var/lib/opencloud/web/assets/apps:rw
+    environment:
+      - IDM_CREATE_DEMO_USERS=false
+      - PROXY_CSP_CONFIG_FILE_LOCATION=/etc/opencloud/csp.yaml
+      - OC_INSECURE=true
+      - OC_PASSWORD_POLICY_BANNED_PASSWORDS_LIST=banned-password-list.txt
+      - OC_ADD_RUN_SERVICES=
+      - GATEWAY_GRPC_ADDR=0.0.0.0:9142
+      - GRAPH_AVAILABLE_ROLES=b1e2218d-eef8-4d4c-b82d-0f1a1b48f3b5,a8d5fe5e-96e3-418d-825b-534dbdf22b99,fb6c3e19-e378-47e5-b277-9732f9de6e21,58c63c02-1d89-4572-916a-870abc5a1b7d,2d00ce52-1fc2-4dbc-8b95-a73b73395f5a,1c996275-f1c9-4e71-abdf-a42f6495e960,312c0871-5ef7-4b3a-85b6-0e4074c64049,aa97fe03-7980-45ac-9e50-b325749fd7e6
+      - PROXY_TLS=false
+      - PROXY_ENABLE_BASIC_AUTH=false
+      - IDM_ADMIN_PASSWORD=admin1234
+      - FRONTEND_ARCHIVER_MAX_SIZE=10000000000
+      - TRAEFIK_PORT_HTTPS=
+      - COLLABORA_DOMAIN=collabora.mueller-nas.de
+      - OC_LOG_LEVEL=info
+      - FRONTEND_APP_HANDLER_SECURE_VIEW_APP_ADDR=eu.opencloud.api.collaboration
+      - OC_URL=https://opencloud.mueller-nas.de
+      - NATS_NATS_HOST=0.0.0.0
+      - FRONTEND_CHECK_FOR_UPDATES=true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.opencloud.entrypoints=https"
+      - "traefik.http.routers.opencloud.rule=Host(`opencloud.mueller-nas.de`)"
+      - "traefik.http.routers.opencloud.tls.certresolver=cloudflare"
+      - "traefik.http.services.opencloud.loadbalancer.server.port=9200"
 
-volumes:
-  opencloud-config:
-  opencloud-data:
+  # --------------------------------------------------------
+  # 2. COLLABORA SERVER (Weboffice)
+  # --------------------------------------------------------
+  collabora:
+    image: collabora/code:25.04.9.4.1
+    container_name: collabora
+    restart: always
+    entrypoint: ["/bin/bash", "-c"]
+    command: ["coolconfig generate-proof-key && /start-collabora-online.sh"]
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=unconfined
+      - apparmor:unconfined
+    networks:
+      - opencloud-net
+      - proxy
+    volumes:
+      - /usr/share/fonts/truetype:/usr/share/fonts/truetype/more:ro
+      - /usr/share/fonts/truetype:/opt/cool/systemplate/usr/share/fonts/truetype/more:ro
+    environment:
+      - username=admin
+      - password=admin
+      - aliasgroup1=https://wopiserver.mueller-nas.de
+      - DONT_GEN_SSL_CERT=YES
+      - extra_params=--o:ssl.enable=false --o:ssl.ssl_verification=false --o:ssl.termination=true --o:welcome.enable=false --o:net.frame_ancestors=opencloud.mueller-nas.de --o:net.lok_allow.host[14]=opencloud.mueller-nas.de --o:home_mode.enable=false
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9980/hosting/discovery"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.collabora.entrypoints=https"
+      - "traefik.http.routers.collabora.rule=Host(`collabora.mueller-nas.de`)"
+      - "traefik.http.routers.collabora.service=collabora"
+      - "traefik.http.routers.collabora.tls.certresolver=cloudflare"
+      - "traefik.http.services.collabora.loadbalancer.server.port=9980"
+
+  # --------------------------------------------------------
+  # 3. OPENCLOUD COLLABORATION SERVER (WOPI / CS3)
+  # --------------------------------------------------------
+  collaboration:
+    image: opencloudeu/opencloud-rolling:6.0.0
+    container_name: collaboration
+    restart: always
+    entrypoint: ["/bin/sh"]
+    command: ["-c", "opencloud collaboration server"]
+    depends_on:
+      opencloud:
+        condition: service_started
+      collabora:
+        condition: service_healthy
+    networks:
+      - opencloud-net
+      - proxy
+    volumes:
+      - /etc/docker/opencloud/config:/etc/opencloud:rw
+      - collaboration-data:/var/lib/opencloud
+    environment:
+      - MICRO_REGISTRY=nats-js-kv
+      - COLLABORATION_APP_ICON=https://collabora.mueller-nas.de/favicon.ico
+      - COLLABORATION_CS3API_DATAGATEWAY_INSECURE=true
+      - MICRO_REGISTRY_ADDRESS=opencloud:9233
+      - COLLABORATION_LOG_LEVEL=info
+      - COLLABORATION_GRPC_ADDR=0.0.0.0:9301
+      - COLLABORATION_APP_PRODUCT=Collabora
+      - OC_URL=https://opencloud.mueller-nas.de
+      - COLLABORATION_APP_ADDR=https://collabora.mueller-nas.de
+      - COLLABORATION_WOPI_SRC=https://wopiserver.mueller-nas.de
+      - COLLABORATION_APP_NAME=CollaboraOnline
+      - COLLABORATION_HTTP_ADDR=0.0.0.0:9300
+      - COLLABORATION_APP_INSECURE=true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.collaboration.entrypoints=https"
+      - "traefik.http.routers.collaboration.rule=Host(`wopiserver.mueller-nas.de`)"
+      - "traefik.http.routers.collaboration.service=collaboration"
+      - "traefik.http.routers.collaboration.tls.certresolver=cloudflare"
+      - "traefik.http.services.collaboration.loadbalancer.server.port=9300"
+
+  # --------------------------------------------------------
+  # 4. TIKA SERVER (Suchmaschine / Indexierung)
+  # --------------------------------------------------------
+  tika:
+    image: apache/tika:latest
+    container_name: tika
+    restart: always
+    networks:
+      - opencloud-net
+      - proxy
+    environment:
+      - TIKA_VERSION=3.3.0
 
 networks:
   opencloud-net:
+    name: opencloud_opencloud-net
   proxy:
     external: true
+
+volumes:
+  collaboration-data:
