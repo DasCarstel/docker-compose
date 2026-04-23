@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /etc/docker/homarr-v1/appdata:/appdata
+      - /etc/docker/homarr:/appdata
     env_file:
       - .env
     ports:
