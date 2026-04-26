@@ -12,13 +12,16 @@ services:
       - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.quartz-rtr.entrypoints=https"
-      - "traefik.http.routers.quartz-rtr.rule=Host(`quartz.mueller-nas.de`)"
-      - "traefik.http.routers.quartz-rtr.tls=true"
-      - "traefik.http.routers.quartz-rtr.tls.certresolver=cloudflare"
-      - "traefik.http.routers.quartz-rtr.middlewares=quartz-legacy-semester-redirect@file"
-      - "traefik.http.routers.quartz-rtr.service=quartz-svc"
-      - "traefik.http.services.quartz-svc.loadbalancer.server.port=8080"
+      - "traefik.http.routers.quartz.entrypoints=https"
+      - "traefik.http.routers.quartz.rule=Host(`quartz.mueller-nas.de`)"
+      - "traefik.http.routers.quartz.tls=true"
+      - "traefik.http.routers.quartz.tls.certresolver=cloudflare"
+      - "traefik.http.routers.quartz.middlewares=quartz-redirect"
+      - "traefik.http.routers.quartz.service=quartz"
+      - "traefik.http.services.quartz.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.quartz-redirect.redirectregex.regex=^https?://[^/]+/Studium/([0-9]+)\\.-Semester/?(.*)$"
+      - "traefik.http.middlewares.quartz-redirect.redirectregex.replacement=https://quartz.mueller-nas.de/Studium/$$1-Semester/$$2"
+      - "traefik.http.middlewares.quartz-redirect.redirectregex.permanent=true"
       - "traefik.docker.network=proxy"
 
   quartz-watch:
