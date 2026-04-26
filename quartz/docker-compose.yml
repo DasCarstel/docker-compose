@@ -1,0 +1,44 @@
+services:
+  quartz:
+    image: ghcr.io/jackyzha0/quartz:latest
+    container_name: quartz
+    restart: unless-stopped
+    volumes:
+      - /opt/docker-compose/quartz/scripts/content:/usr/src/app/content:ro
+    ports:
+      - "3131:3001"
+      - "8089:8080"
+    networks:
+      - proxy
+
+  quartz-watch:
+    image: node:18-alpine
+    container_name: quartz-watch
+    restart: unless-stopped
+    volumes:
+      - /opt/docker-compose/quartz/scripts:/app
+      - /opt/docker-compose/quartz/scripts/content:/opt/docker-compose/quartz/scripts/content
+      - /etc/docker/quartz/sync-data:/etc/docker/quartz/sync-data:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: sh -c "apk add --no-cache docker-cli >/dev/null && node /app/watch.mjs"
+    networks:
+      - proxy
+
+  quartz-webhook:
+    image: node:18-alpine
+    container_name: quartz-webhook
+    restart: unless-stopped
+    volumes:
+      - /opt/docker-compose/quartz/scripts:/app
+      - /opt/docker-compose/quartz/scripts/content:/opt/docker-compose/quartz/scripts/content
+      - /etc/docker/quartz/sync-data:/etc/docker/quartz/sync-data:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "3080:3080"
+    command: sh -c "apk add --no-cache docker-cli >/dev/null && node /app/webhook.mjs"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
