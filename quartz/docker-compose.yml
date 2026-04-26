@@ -10,6 +10,16 @@ services:
       - "8089:8080"
     networks:
       - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.quartz-rtr.entrypoints=https"
+      - "traefik.http.routers.quartz-rtr.rule=Host(`quartz.mueller-nas.de`)"
+      - "traefik.http.routers.quartz-rtr.tls=true"
+      - "traefik.http.routers.quartz-rtr.tls.certresolver=cloudflare"
+      - "traefik.http.routers.quartz-rtr.middlewares=quartz-legacy-semester-redirect@file"
+      - "traefik.http.routers.quartz-rtr.service=quartz-svc"
+      - "traefik.http.services.quartz-svc.loadbalancer.server.port=8080"
+      - "traefik.docker.network=proxy"
 
   quartz-watch:
     image: node:18-alpine
