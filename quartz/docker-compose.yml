@@ -4,7 +4,7 @@ services:
     container_name: quartz
     restart: unless-stopped
     volumes:
-      - /opt/docker-compose/quartz/scripts/content:/usr/src/app/content:ro
+      - /opt/repos/quartz-scripts/content:/usr/src/app/content:ro
     ports:
       - "3131:3001"
       - "8089:8080"
@@ -16,11 +16,12 @@ services:
     container_name: quartz-watch
     restart: unless-stopped
     volumes:
-      - /opt/docker-compose/quartz/scripts:/app
-      - /opt/docker-compose/quartz/scripts/content:/opt/docker-compose/quartz/scripts/content
+      - /opt/repos/quartz-scripts:/app
+      - /etc/docker/quartz/.env:/etc/docker/quartz/.env:ro
       - /etc/docker/quartz/sync-data:/etc/docker/quartz/sync-data:ro
+      - /etc/docker/quartz/runtime:/etc/docker/quartz/runtime
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    command: sh -c "apk add --no-cache docker-cli >/dev/null && node /app/watch.mjs"
+    command: sh -c "apk add --no-cache docker-cli >/dev/null && cd /app && [ -d node_modules ] || npm install --omit=dev && node watch.mjs"
     networks:
       - proxy
 
@@ -29,13 +30,14 @@ services:
     container_name: quartz-webhook
     restart: unless-stopped
     volumes:
-      - /opt/docker-compose/quartz/scripts:/app
-      - /opt/docker-compose/quartz/scripts/content:/opt/docker-compose/quartz/scripts/content
+      - /opt/repos/quartz-scripts:/app
+      - /etc/docker/quartz/.env:/etc/docker/quartz/.env:ro
       - /etc/docker/quartz/sync-data:/etc/docker/quartz/sync-data:ro
+      - /etc/docker/quartz/runtime:/etc/docker/quartz/runtime
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - "3080:3080"
-    command: sh -c "apk add --no-cache docker-cli >/dev/null && node /app/webhook.mjs"
+    command: sh -c "apk add --no-cache docker-cli >/dev/null && cd /app && [ -d node_modules ] || npm install --omit=dev && node webhook.mjs"
     networks:
       - proxy
 
