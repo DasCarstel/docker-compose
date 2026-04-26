@@ -17,7 +17,6 @@ services:
     restart: unless-stopped
     volumes:
       - /opt/repos/quartz-scripts:/app
-      - /etc/docker/quartz/.env:/etc/docker/quartz/.env:ro
       - /etc/docker/quartz/sync-data:/etc/docker/quartz/sync-data:ro
       - /etc/docker/quartz/runtime:/etc/docker/quartz/runtime
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -31,7 +30,6 @@ services:
     restart: unless-stopped
     volumes:
       - /opt/repos/quartz-scripts:/app
-      - /etc/docker/quartz/.env:/etc/docker/quartz/.env:ro
       - /etc/docker/quartz/sync-data:/etc/docker/quartz/sync-data:ro
       - /etc/docker/quartz/runtime:/etc/docker/quartz/runtime
       - /var/run/docker.sock:/var/run/docker.sock:ro
