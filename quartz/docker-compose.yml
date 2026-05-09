@@ -4,7 +4,7 @@ services:
     container_name: quartz
     restart: unless-stopped
     volumes:
-      - /opt/repos/quartz-scripts/content:/usr/src/app/content:ro
+      - /etc/docker/quartz/content:/usr/src/app/content:ro
     ports:
       - "3131:3001"
       - "8089:8080"
@@ -29,7 +29,7 @@ services:
     container_name: quartz-watch
     restart: unless-stopped
     volumes:
-      - /opt/repos/quartz-scripts:/app
+      - /etc/docker/quartz/scripts:/app
       - /etc/docker/quartz/sync-data:/etc/docker/quartz/sync-data:ro
       - /etc/docker/quartz/runtime:/etc/docker/quartz/runtime
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -42,7 +42,7 @@ services:
     container_name: quartz-webhook
     restart: unless-stopped
     volumes:
-      - /opt/repos/quartz-scripts:/app
+      - /etc/docker/quartz/scripts:/app
       - /etc/docker/quartz/sync-data:/etc/docker/quartz/sync-data:ro
       - /etc/docker/quartz/runtime:/etc/docker/quartz/runtime
       - /var/run/docker.sock:/var/run/docker.sock:ro
