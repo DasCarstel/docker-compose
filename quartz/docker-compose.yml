@@ -30,9 +30,13 @@ services:
     restart: unless-stopped
     volumes:
       - /etc/docker/quartz/scripts:/app
+      - /etc/docker/quartz/content:/etc/docker/quartz/content
       - /etc/docker/quartz/sync-data:/etc/docker/quartz/sync-data:ro
       - /etc/docker/quartz/runtime:/etc/docker/quartz/runtime
+      - /etc/docker/quartz/.env:/etc/docker/quartz/.env:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - QUARTZ_ENV_FILE=/etc/docker/quartz/.env
     command: sh -c "apk add --no-cache docker-cli >/dev/null && cd /app && [ -d node_modules ] || npm install --omit=dev && node watch.mjs"
     networks:
       - proxy
@@ -43,11 +47,15 @@ services:
     restart: unless-stopped
     volumes:
       - /etc/docker/quartz/scripts:/app
+      - /etc/docker/quartz/content:/etc/docker/quartz/content
       - /etc/docker/quartz/sync-data:/etc/docker/quartz/sync-data:ro
       - /etc/docker/quartz/runtime:/etc/docker/quartz/runtime
+      - /etc/docker/quartz/.env:/etc/docker/quartz/.env:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
       - "3080:3080"
+    environment:
+      - QUARTZ_ENV_FILE=/etc/docker/quartz/.env
     command: sh -c "apk add --no-cache docker-cli >/dev/null && cd /app && [ -d node_modules ] || npm install --omit=dev && node webhook.mjs"
     networks:
       - proxy
