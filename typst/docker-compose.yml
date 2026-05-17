@@ -1,0 +1,27 @@
+services:
+  typst:
+    build: .
+    container_name: typst
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.typst.entrypoints=http"
+      - "traefik.http.routers.typst.rule=Host(`typst.mueller-nas.de`)"
+      - "traefik.http.middlewares.typst-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.typst.middlewares=typst-https-redirect"
+      - "traefik.http.routers.typst-secure.entrypoints=https"
+      - "traefik.http.routers.typst-secure.rule=Host(`typst.mueller-nas.de`)"
+      - "traefik.http.routers.typst-secure.tls=true"
+      - "traefik.http.routers.typst-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.typst-secure.service=typst"
+      - "traefik.http.routers.typst-secure.middlewares=authelia@docker"
+      - "traefik.http.services.typst.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+
+networks:
+  proxy:
+    external: true
