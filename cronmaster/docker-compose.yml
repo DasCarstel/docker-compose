@@ -1,0 +1,44 @@
+services:
+  cronmaster:
+    image: ghcr.io/fccview/cronmaster:latest
+    container_name: cronmaster
+    user: root
+    restart: always
+    init: true
+    pid: host
+    privileged: true
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - DOCKER=${DOCKER}
+      - TZ=${TZ}
+      - NEXT_PUBLIC_CLOCK_UPDATE_INTERVAL=${NEXT_PUBLIC_CLOCK_UPDATE_INTERVAL}
+      - AUTH_PASSWORD=${AUTH_PASSWORD}
+      - HOST_CRONTAB_USER=${HOST_CRONTAB_USER}
+      - SSO_MODE=${SSO_MODE}
+      - APP_URL=${APP_URL}
+      - OIDC_ISSUER=${OIDC_ISSUER}
+      - OIDC_CLIENT_ID=${OIDC_CLIENT_ID}
+      - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
+      - OIDC_LOGOUT_URL=${OIDC_LOGOUT_URL}
+      - OIDC_AUTO_REDIRECT=${OIDC_AUTO_REDIRECT}
+      - HTTPS=${HTTPS}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/docker/cronmaster/scripts:/app/scripts
+      - /etc/docker/cronmaster/data:/app/data
+      - /etc/docker/cronmaster/snippets:/app/snippets
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cronmaster.rule=Host(`cronmaster.mueller-nas.de`)"
+      - "traefik.http.routers.cronmaster.entrypoints=https"
+      - "traefik.http.routers.cronmaster.tls=true"
+      - "traefik.http.routers.cronmaster.tls.certresolver=cloudflare"
+      - "traefik.http.routers.cronmaster.middlewares=authelia@docker"
+      - "traefik.http.services.cronmaster.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    external: true
