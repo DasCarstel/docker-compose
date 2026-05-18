@@ -7,7 +7,7 @@ services:
     environment:
       - WEBDAV_BASE_URL=http://webdav:2345/
       - WEBDAV_USERNAME=admin
-      - WEBDAV_PASSWORD=admin
+      - WEBDAV_PASSWORD=${WEBDAV_PASSWORD}
       - WEBDAV_SYNC_FOLDER_PATH=/
       - SYNC_INTERVAL=15
       - IS_COMPRESSION_ENABLED=true
@@ -36,7 +36,7 @@ services:
     expose:
       - "2345"
     volumes:
-      - ./webdav.yaml:/etc/webdav/config.yaml:ro
+      - /etc/docker/webdav-super-productivity/config/webdav.yaml:/etc/webdav/config.yaml:ro
       - /etc/docker/superproductivity:/data
     labels:
       - "traefik.enable=true"
