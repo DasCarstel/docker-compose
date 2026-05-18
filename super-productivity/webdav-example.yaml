@@ -10,7 +10,11 @@ cors:
   allowed_headers:
     - '*'
   allowed_hosts:
-    - '*'
+    - superproductivity.mueller-nas.de
+    - webdav-superproductivity.mueller-nas.de
+  allowed_origins:
+    - https://superproductivity.mueller-nas.de
+    - https://webdav-superproductivity.mueller-nas.de
   allowed_methods:
     - GET
     - HEAD
@@ -30,5 +34,5 @@ cors:
 
 users:
   - username: admin
-    password: admin
+    password: change-me
     directory: /data
