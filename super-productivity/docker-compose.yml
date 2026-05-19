@@ -59,6 +59,7 @@ services:
       - "traefik.http.middlewares.webdav-cors.headers.accesscontrolallowmethods=GET,HEAD,POST,PUT,DELETE,OPTIONS,PROPFIND,PROPPATCH,MKCOL,COPY,MOVE,LOCK,UNLOCK"
       - "traefik.http.middlewares.webdav-cors.headers.accesscontrolallowheaders=authorization,content-type,depth,if,lock-token,destination,overwrite,range,accept,origin,access-control-request-private-network"
       - "traefik.http.middlewares.webdav-cors.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.middlewares.webdav-cors.headers.customresponseheaders.Alt-Svc="
       - "traefik.http.middlewares.webdav-cors.headers.customresponseheaders.Access-Control-Allow-Private-Network=true"
       - "traefik.http.middlewares.webdav-cors.headers.accesscontrolmaxage=600"
       - "traefik.docker.network=proxy"

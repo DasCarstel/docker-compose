@@ -8,29 +8,27 @@ services:
     volumes:
       - /etc/docker/vaultwarden:/data
     environment:
-     #- ROCKET_TLS={certs="/ssl/certs/certs.pem",key="/ssl/private/key.pem"}  // Environment variable is specific to the Rocket web server
      - ADMIN_TOKEN=${ADMIN_TOKEN}
      - WEBSOCKET_ENABLED=true
      - SIGNUPS_ALLOWED=false
-     #- SMTP_HOST=${SMTP_HOST}
-     #- SMTP_FROM=${SMTP_FROM}
-     #- SMTP_PORT=${SMTP_PORT}
-     #- SMTP_SECURITY=${SMTP_SECURITY}
-     #- SMTP_TIMEOUT=${SMTP_TIMEOUT}
-     #- SMTP_USERNAME=${SMTP_USERNAME}
-     #- SMTP_PASSWORD=${SMTP_PASSWORD}
      - DOMAIN=${DOMAIN}
+     - ROCKET_CORS_ORIGINS=*
     labels:
       - traefik.enable=true
       - traefik.http.routers.vaultwarden.entrypoints=http
       - traefik.http.routers.vaultwarden.rule=Host(`vaultwarden.mueller-nas.de`)
       - traefik.http.middlewares.vaultwarden-https-redirect.redirectscheme.scheme=https
-      - traefik.http.routers.vaultwarden.middlewares=vaultwarden-https-redirect
+      - traefik.http.routers.vaultwarden.middlewares=vaultwarden-https-redirect,vaultwarden-cors-fix
       - traefik.http.routers.vaultwarden-secure.entrypoints=https
       - traefik.http.routers.vaultwarden-secure.rule=Host(`vaultwarden.mueller-nas.de`)
       - traefik.http.routers.vaultwarden-secure.tls=true
       - traefik.http.routers.vaultwarden-secure.service=vaultwarden
+      - traefik.http.routers.vaultwarden-secure.middlewares=vaultwarden-cors-fix
       - traefik.http.services.vaultwarden.loadbalancer.server.port=80
+      - traefik.http.middlewares.vaultwarden-cors-fix.headers.accesscontrolalloworiginlist=*
+      - traefik.http.middlewares.vaultwarden-cors-fix.headers.accesscontrolallowmethods=GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH
+      - traefik.http.middlewares.vaultwarden-cors-fix.headers.accesscontrolallowheaders=*
+      - traefik.http.middlewares.vaultwarden-cors-fix.headers.accesscontrolmaxage=600
       - traefik.docker.network=proxy
 networks:
   proxy:
