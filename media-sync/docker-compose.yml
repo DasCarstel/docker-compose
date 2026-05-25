@@ -1,0 +1,30 @@
+services:
+  media-sync:
+    build: /etc/docker/media-sync
+    container_name: media-sync
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - /etc/docker/media-sync/.env:/app/.env
+      - /etc/docker/media-sync/ssh/media_sync_ed25519:/app/ssh_key:ro
+      - /etc/docker/media-sync/state:/app/state
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.media-sync.entrypoints=http"
+      - "traefik.http.routers.media-sync.rule=Host(`media-sync.mueller-nas.de`)"
+      - "traefik.http.middlewares.media-sync-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.media-sync.middlewares=media-sync-https-redirect"
+      - "traefik.http.routers.media-sync-secure.entrypoints=https"
+      - "traefik.http.routers.media-sync-secure.rule=Host(`media-sync.mueller-nas.de`)"
+      - "traefik.http.routers.media-sync-secure.tls=true"
+      - "traefik.http.routers.media-sync-secure.service=media-sync"
+      - "traefik.http.routers.media-sync-secure.middlewares=authelia@docker"
+      - "traefik.http.services.media-sync.loadbalancer.server.port=5000"
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    external: true
