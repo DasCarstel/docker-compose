@@ -1,0 +1,15 @@
+services:
+  doorbell-discord-bot:
+    build:
+      context: /etc/docker/doorbell-discord-bot
+      dockerfile: Dockerfile
+    container_name: doorbell-discord-bot
+    restart: unless-stopped
+    env_file:
+      - /etc/docker/doorbell-discord-bot/.env
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
