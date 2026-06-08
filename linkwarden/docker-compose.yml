@@ -1,16 +1,15 @@
 services:
   gluetun:
-    #image: qmcgaw/gluetun
-    image: ghcr.io/qdm12/gluetun:v3.39 #https://github.com/qdm12/gluetun/issues/2442
+    image: ghcr.io/qdm12/gluetun:v3.39
     container_name: Linkwarden-gluetun
     cap_add:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:
-      - 8889:8888/tcp # HTTP proxy
-      - 8389:8388/tcp # Shadowsocks
-      - 8389:8388/udp # Shadowsocks
+      - 8889:8888/tcp
+      - 8389:8388/tcp
+      - 8389:8388/udp
       - 7461:3000
     volumes:
       - /etc/docker/gluetun/linkwarden:/gluetun
@@ -62,23 +61,45 @@ services:
       linkwarden_internal:
         ipv4_address: 172.23.0.4
 
+  encryption-sidecar:
+    image: encryption-sidecar:latest
+    container_name: Linkwarden-encryption
+    restart: unless-stopped
+    environment:
+      - ENCRYPTION_PASSWORD=${ENCRYPTION_PASSWORD}
+      - SYNC_INTERVAL=120
+    volumes:
+      - /etc/docker/linkwarden/archives.enc:/encrypted
+      - linkwarden_archives_decrypted:/decrypted
+    tmpfs:
+      - /tmp:mode=1777
+
   linkwarden:
     image: ghcr.io/linkwarden/linkwarden:latest
     container_name: Linkwarden
     security_opt:
       - no-new-privileges:true
     volumes:
-      - /etc/docker/linkwarden:/data/data
+      - /etc/docker/linkwarden/config:/data/data/config
+      - linkwarden_archives_decrypted:/data/data/archives
     environment:
       DATABASE_URL: postgres://linkwardenuser:${POSTGRES_PASSWORD}@172.23.0.4:5432/linkwarden
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXT_PUBLIC_DISABLE_REGISTRATION: false # or true
+      NEXT_PUBLIC_DISABLE_REGISTRATION: false
     restart: on-failure:5
     depends_on:
-      - gluetun
-      - db
+      gluetun:
+        condition: service_started
+      db:
+        condition: service_healthy
+      encryption-sidecar:
+        condition: service_started
     network_mode: service:gluetun
+
+volumes:
+  linkwarden_archives_decrypted:
+    driver: local
 
 networks:
   proxy:
