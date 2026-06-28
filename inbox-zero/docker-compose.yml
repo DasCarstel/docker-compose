@@ -72,7 +72,7 @@ services:
       - "traefik.http.routers.inbox-zero-webhook.service=inbox-zero"
       - "traefik.http.routers.inbox-zero-webhook.priority=100"
       - "traefik.http.routers.inbox-zero-secure.entrypoints=https"
-      - "traefik.http.routers.inbox-zero-secure.middlewares=authelia@docker"
+      - "traefik.http.routers.inbox-zero-secure.middlewares=authentik@docker"
       - "traefik.http.routers.inbox-zero-secure.rule=Host(`inbox-zero.mueller-nas.de`)"
       - "traefik.http.routers.inbox-zero-secure.tls=true"
       - "traefik.http.routers.inbox-zero-secure.tls.certresolver=cloudflare"

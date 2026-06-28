@@ -1,0 +1,135 @@
+services:
+  postgresql:
+    image: docker.io/library/postgres:16-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    volumes:
+      - /etc/docker/authentik/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASS}
+      POSTGRES_DB: ${PG_DB}
+    networks:
+      - proxy
+
+  redis:
+    image: docker.io/library/redis:alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    volumes:
+      - /etc/docker/authentik/redis:/data
+    networks:
+      - proxy
+
+  server:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-latest}
+    restart: unless-stopped
+    command: server
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_COOKIE_DOMAIN: ${AUTHENTIK_COOKIE_DOMAIN}
+      AUTHENTIK_BOOTSTRAP_EMAIL: ${AUTHENTIK_BOOTSTRAP_EMAIL}
+      AUTHENTIK_BOOTSTRAP_PASSWORD: ${AUTHENTIK_BOOTSTRAP_PASSWORD}
+      AUTHENTIK_BOOTSTRAP_TOKEN: ${AUTHENTIK_BOOTSTRAP_TOKEN}
+    volumes:
+      - /etc/docker/authentik/media:/media
+      - /etc/docker/authentik/custom-templates:/templates
+    env_file:
+      - .env
+    ports:
+      - "0.0.0.0:9000:9000"
+    networks:
+      proxy:
+        ipv4_address: 192.168.80.90
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.authentik.entrypoints=http"
+      - "traefik.http.routers.authentik.rule=Host(`auth.mueller-nas.de`)"
+      - "traefik.http.middlewares.authentik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.authentik.middlewares=authentik-https-redirect"
+      - "traefik.http.routers.authentik-secure.entrypoints=https"
+      - "traefik.http.routers.authentik-secure.rule=Host(`auth.mueller-nas.de`)"
+      - "traefik.http.routers.authentik-secure.tls=true"
+      - "traefik.http.routers.authentik-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.authentik-secure.service=authentik"
+      - "traefik.http.services.authentik.loadbalancer.server.port=9000"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.middlewares.authentik.forwardauth.address=http://192.168.80.92:9000/outpost.goauthentik.io/auth/traefik"
+      - "traefik.http.middlewares.authentik.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.authentik.forwardauth.authResponseHeaders=X-authentik-username,X-authentik-groups,X-authentik-email,X-authentik-name,X-authentik-uid,X-authentik-entitlements,X-authentik-jwt,X-authentik-meta-jwks,X-authentik-meta-outpost,X-authentik-meta-provider,X-authentik-meta-app,X-authentik-meta-version"
+
+  worker:
+    image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-latest}
+    restart: unless-stopped
+    command: worker
+    environment:
+      AUTHENTIK_REDIS__HOST: redis
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__USER: ${PG_USER}
+      AUTHENTIK_POSTGRESQL__NAME: ${PG_DB}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${PG_PASS}
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+      AUTHENTIK_COOKIE_DOMAIN: ${AUTHENTIK_COOKIE_DOMAIN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/docker/authentik/media:/media
+      - /etc/docker/authentik/certs:/certs
+      - /etc/docker/authentik/custom-templates:/templates
+    env_file:
+      - .env
+    user: root
+    networks:
+      proxy:
+        ipv4_address: 192.168.80.91
+
+  outpost:
+    image: ghcr.io/goauthentik/proxy:${AUTHENTIK_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      AUTHENTIK_HOST: https://auth.mueller-nas.de
+      AUTHENTIK_HOST_BROWSER: https://auth.mueller-nas.de
+      AUTHENTIK_TOKEN: i6mWsnQ2LdzCiLDViLFI7VTZQmejGSvgN9QY77Wq0fI2fdOwBDiM8PuVIS27
+      AUTHENTIK_INSECURE: "true"
+      AUTHENTIK_LOG_LEVEL: debug
+    networks:
+      proxy:
+        ipv4_address: 192.168.80.92
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.authentik-outpost.entrypoints=http"
+      - "traefik.http.routers.authentik-outpost.rule=Host(`auth.mueller-nas.de`) && PathPrefix(`/outpost.goauthentik.io/`)"
+      - "traefik.http.routers.authentik-outpost.priority=30"
+      - "traefik.http.routers.authentik-outpost-secure.entrypoints=https"
+      - "traefik.http.routers.authentik-outpost-secure.rule=Host(`auth.mueller-nas.de`) && PathPrefix(`/outpost.goauthentik.io/`)"
+      - "traefik.http.routers.authentik-outpost-secure.priority=30"
+      - "traefik.http.routers.authentik-outpost-secure.tls=true"
+      - "traefik.http.routers.authentik-outpost-secure.tls.certresolver=cloudflare"
+      - "traefik.http.services.authentik-outpost.loadbalancer.server.port=9000"
+      - "traefik.http.routers.authentik-outpost-app-secure.entrypoints=https"
+      - "traefik.http.routers.authentik-outpost-app-secure.rule=Host(`typst.mueller-nas.de`) && PathPrefix(`/outpost.goauthentik.io/`)"
+      - "traefik.http.routers.authentik-outpost-app-secure.priority=35"
+      - "traefik.http.routers.authentik-outpost-app-secure.tls=true"
+      - "traefik.http.routers.authentik-outpost-app-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.authentik-outpost-app-secure.service=authentik-outpost"
+
+networks:
+  proxy:
+    external: true

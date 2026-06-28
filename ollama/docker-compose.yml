@@ -39,7 +39,7 @@ services:
       - 'traefik.http.routers.openwebui-secure.rule=Host(`openwebui.mueller-nas.de`)'
       - "traefik.http.routers.openwebui-secure.tls=true"
       - "traefik.http.routers.openwebui-secure.service=openwebui"
-      - "traefik.http.routers.openwebui-secure.middlewares=authelia@docker"
+      - "traefik.http.routers.openwebui-secure.middlewares=authentik@docker"
       - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
       - "traefik.docker.network=proxy"
     networks:

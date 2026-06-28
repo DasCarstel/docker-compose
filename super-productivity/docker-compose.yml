@@ -22,7 +22,7 @@ services:
       - "traefik.http.routers.superproductivity-secure.rule=Host(`superproductivity.mueller-nas.de`)"
       - "traefik.http.routers.superproductivity-secure.tls=true"
       - "traefik.http.routers.superproductivity-secure.service=superproductivity"
-      - "traefik.http.routers.superproductivity-secure.middlewares=authelia@docker"
+      - "traefik.http.routers.superproductivity-secure.middlewares=authentik@docker"
       - "traefik.http.services.superproductivity.loadbalancer.server.port=80"
       - "traefik.docker.network=proxy"
     networks:

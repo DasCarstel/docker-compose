@@ -19,7 +19,7 @@ services:
       - "traefik.http.routers.stirling-pdf.entrypoints=https"
       - "traefik.http.routers.stirling-pdf.tls=true"
       - "traefik.http.routers.stirling-pdf.tls.certresolver=cloudflare"
-      - "traefik.http.routers.stirling-pdf.middlewares=authelia@docker"
+      - "traefik.http.routers.stirling-pdf.middlewares=authentik@docker"
       - "traefik.http.services.stirling-pdf.loadbalancer.server.port=8080"
       - "traefik.docker.network=proxy"
 

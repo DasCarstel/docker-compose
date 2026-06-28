@@ -21,7 +21,7 @@ services:
       - "traefik.http.routers.media-sync-secure.rule=Host(`media-sync.mueller-nas.de`)"
       - "traefik.http.routers.media-sync-secure.tls=true"
       - "traefik.http.routers.media-sync-secure.service=media-sync"
-      - "traefik.http.routers.media-sync-secure.middlewares=authelia@docker"
+      - "traefik.http.routers.media-sync-secure.middlewares=authentik@docker"
       - "traefik.http.services.media-sync.loadbalancer.server.port=5000"
       - "traefik.docker.network=proxy"
 

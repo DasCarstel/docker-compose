@@ -69,7 +69,7 @@ services:
       - "traefik.http.routers.scanopy-secure.rule=Host(`scanopy.mueller-nas.de`)"
       - "traefik.http.routers.scanopy-secure.tls=true"
       - "traefik.http.routers.scanopy-secure.service=scanopy"
-      - "traefik.http.routers.scanopy-secure.middlewares=authelia@docker"
+      - "traefik.http.routers.scanopy-secure.middlewares=authentik@docker"
       - "traefik.http.services.scanopy.loadbalancer.server.port=60072"
       - "traefik.docker.network=proxy"
 

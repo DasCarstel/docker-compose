@@ -16,7 +16,7 @@ services:
       - "traefik.http.routers.typst-secure.tls=true"
       - "traefik.http.routers.typst-secure.tls.certresolver=cloudflare"
       - "traefik.http.routers.typst-secure.service=typst"
-      - "traefik.http.routers.typst-secure.middlewares=authelia@docker"
+      - "traefik.http.routers.typst-secure.middlewares=authentik@docker"
       - "traefik.http.services.typst.loadbalancer.server.port=3000"
       - "traefik.docker.network=proxy"
     networks:

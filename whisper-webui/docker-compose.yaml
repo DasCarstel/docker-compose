@@ -28,7 +28,7 @@ services:
       - "traefik.http.routers.whisper-webui-secure.rule=Host(`whisper-webui.mueller-nas.de`)"
       - "traefik.http.routers.whisper-webui-secure.tls=true"
       - "traefik.http.routers.whisper-webui-secure.service=whisper-webui"
-      - "traefik.http.routers.whisper-webui-secure.middlewares=authelia@docker"
+      - "traefik.http.routers.whisper-webui-secure.middlewares=authentik@docker"
       - "traefik.http.services.whisper-webui.loadbalancer.server.port=7860"
       - "traefik.docker.network=proxy"
     networks:

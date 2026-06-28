@@ -106,7 +106,7 @@ services:
       - "traefik.http.routers.paperless-ngx-secure.rule=Host(`paperless-ngx.mueller-nas.de`)"
       - "traefik.http.routers.paperless-ngx-secure.tls=true"
       - "traefik.http.routers.paperless-ngx-secure.service=paperless-ngx"
-      - "traefik.http.routers.paperless-ngx-secure.middlewares=authelia@docker" # This is for Authelia middlewware
+      - "traefik.http.routers.paperless-ngx-secure.middlewares=authentik@docker" # This is for Authelia middlewware
       # Zweite Domain: intern-paperless-ngx.mueller-nas.de (mit Bindestrich statt Punkt)
       - "traefik.http.routers.intern-paperless.entrypoints=http"
       - "traefik.http.routers.intern-paperless.rule=Host(`intern-paperless-ngx.mueller-nas.de`)"
