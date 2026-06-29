@@ -3,7 +3,7 @@ services:
   # 1. OPENCLOUD CORE SERVER
   # --------------------------------------------------------
   opencloud:
-    image: opencloudeu/opencloud-rolling:6.0.0
+    image: opencloudeu/opencloud:7.2.0
     container_name: opencloud
     restart: always
     entrypoint: ["/bin/sh"]
@@ -28,6 +28,18 @@ services:
       - IDM_ADMIN_PASSWORD=admin1234
       - FRONTEND_ARCHIVER_MAX_SIZE=10000000000
       - TRAEFIK_PORT_HTTPS=
+      - IDP_DOMAIN=auth.mueller-nas.de
+      - OC_OIDC_ISSUER=https://auth.mueller-nas.de/application/o/opencloud/
+      - OC_OIDC_CLIENT_ID=web
+      - OC_OIDC_CLIENT_SCOPES=openid profile email
+      - WEBFINGER_WEB_OIDC_CLIENT_ID=web
+      - WEBFINGER_WEB_OIDC_CLIENT_SCOPES=openid profile email
+      - PROXY_OIDC_REWRITE_WELLKNOWN=true
+      - PROXY_AUTOPROVISION_ACCOUNTS=true
+      - PROXY_ROLE_ASSIGNMENT_DRIVER=default
+      - GRAPH_ASSIGN_DEFAULT_USER_ROLE=true
+      - PROXY_USER_OIDC_CLAIM=preferred_username
+      - PROXY_USER_CS3_CLAIM=username
       - COLLABORA_DOMAIN=collabora.mueller-nas.de
       - OC_LOG_LEVEL=info
       - FRONTEND_APP_HANDLER_SECURE_VIEW_APP_ADDR=eu.opencloud.api.collaboration
@@ -86,7 +98,7 @@ services:
   # 3. OPENCLOUD COLLABORATION SERVER (WOPI / CS3)
   # --------------------------------------------------------
   collaboration:
-    image: opencloudeu/opencloud-rolling:6.0.0
+    image: opencloudeu/opencloud:7.2.0
     container_name: collaboration
     restart: always
     entrypoint: ["/bin/sh"]
@@ -129,14 +141,16 @@ services:
   # 4. TIKA SERVER (Suchmaschine / Indexierung)
   # --------------------------------------------------------
   tika:
-    image: apache/tika:latest
+    image: apache/tika:2.9.2.1-full
     container_name: tika
     restart: always
     networks:
       - opencloud-net
       - proxy
+    entrypoint: ["/bin/sh"]
+    command: ["-c", "exec java -jar /tika-server-standard-2.9.2.jar -h 0.0.0.0"]
     environment:
-      - TIKA_VERSION=3.3.0
+      - TIKA_VERSION=2.9.2.1
 
 networks:
   opencloud-net:
