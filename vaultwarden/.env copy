@@ -1,2 +1,4 @@
 ADMIN_TOKEN=your_admin_token_here
 DOMAIN=your_domain_here
+SSO_CLIENT_ID=your_sso_client_id_here
+SSO_CLIENT_SECRET=your_sso_client_secret_here
