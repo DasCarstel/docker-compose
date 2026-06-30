@@ -89,6 +89,10 @@ services:
       #PAPERLESS_SECRET_KEY: change-me
 # Use this variable to set a timezone for the Paperless Docker containers. If not specified, defaults to UTC.
       PAPERLESS_TIME_ZONE: Europe/Berlin
+      PAPERLESS_APPS: allauth.socialaccount.providers.openid_connect
+      PAPERLESS_SOCIALACCOUNT_PROVIDERS: '{"openid_connect": {"OAUTH_PKCE_ENABLED": true, "APPS": [{"provider_id": "authentik", "name": "authentik", "client_id": "KtZeLYl4uLCPp5K64tcnDBrc19pXSkuS8EBYJ3GT", "secret": "8VJHFOMmeDnHap7ia1AsbBJNCXBA5swg5BiraslImMWVZYTh5fg0GZtkGXOFNOR89WceDupZ3rvJPBmOXJdAl8gHIP38wkmPY9myZAIWZq1twBK27KPGvUb3KGNbs6Cq", "settings": {"server_url": "https://auth.mueller-nas.de/application/o/paperless-ngx/.well-known/openid-configuration", "fetch_userinfo": true}}], "SCOPE": ["openid", "profile", "email"]}}'
+      PAPERLESS_SOCIAL_AUTO_SIGNUP: "true"
+      PAPERLESS_SOCIALACCOUNT_ALLOW_SIGNUPS: "true"
 # The default language to use for OCR. Set this to the language most of your
 # documents are written in.
       PAPERLESS_OCR_LANGUAGE: deu
@@ -106,7 +110,6 @@ services:
       - "traefik.http.routers.paperless-ngx-secure.rule=Host(`paperless-ngx.mueller-nas.de`)"
       - "traefik.http.routers.paperless-ngx-secure.tls=true"
       - "traefik.http.routers.paperless-ngx-secure.service=paperless-ngx"
-      - "traefik.http.routers.paperless-ngx-secure.middlewares=authentik@docker" # This is for Authelia middlewware
       # Zweite Domain: intern-paperless-ngx.mueller-nas.de (mit Bindestrich statt Punkt)
       - "traefik.http.routers.intern-paperless.entrypoints=http"
       - "traefik.http.routers.intern-paperless.rule=Host(`intern-paperless-ngx.mueller-nas.de`)"
