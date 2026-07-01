@@ -122,6 +122,7 @@ services:
       AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN}
       AUTHENTIK_INSECURE: "true"
       AUTHENTIK_LOG_LEVEL: debug
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
     networks:
       proxy:
         ipv4_address: 192.168.80.92
