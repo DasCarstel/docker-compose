@@ -25,7 +25,19 @@ services:
       - 3005:8080
     environment:
       - 'OLLAMA_BASE_URL=http://ollama:11434'
-      - 'WEBUI_SECRET_KEY='
+      - 'WEBUI_URL=https://openwebui.mueller-nas.de'
+      - 'WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}'
+      - 'ENABLE_OAUTH_SIGNUP=true'
+      - 'OAUTH_MERGE_ACCOUNTS_BY_EMAIL=true'
+      - 'ENABLE_LOGIN_FORM=false'
+      - 'ENABLE_PASSWORD_AUTH=false'
+      - 'ENABLE_PASSWORD_CHANGE_FORM=false'
+      - 'OAUTH_PROVIDER_NAME=authentik'
+      - 'OPENID_PROVIDER_URL=https://auth.mueller-nas.de/application/o/open-webui-sso/.well-known/openid-configuration'
+      - 'OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}'
+      - 'OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}'
+      - 'OPENID_REDIRECT_URI=https://openwebui.mueller-nas.de/oauth/oidc/callback'
+      - 'OAUTH_SCOPES=openid email profile'
     extra_hosts:
       - host.docker.internal:host-gateway
     restart: unless-stopped
@@ -39,7 +51,7 @@ services:
       - 'traefik.http.routers.openwebui-secure.rule=Host(`openwebui.mueller-nas.de`)'
       - "traefik.http.routers.openwebui-secure.tls=true"
       - "traefik.http.routers.openwebui-secure.service=openwebui"
-      - "traefik.http.routers.openwebui-secure.middlewares=authentik@docker"
+      - "traefik.http.routers.openwebui-secure.middlewares=sslheader@docker"
       - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
       - "traefik.docker.network=proxy"
     networks:
