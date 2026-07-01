@@ -12,7 +12,7 @@ services:
         ipv4_address: 172.45.0.4 #needs to start at 4, low numbers a not possible 
       proxy:
     env_file:
-      - 'env.influxdb'
+      - .env
     restart: unless-stopped
     volumes:
       # Data persistency
@@ -44,7 +44,7 @@ services:
       influxdb:
       proxy:
     env_file:
-      - 'env.grafana'
+      - .env
     user: "0"
     restart: unless-stopped
     links:
