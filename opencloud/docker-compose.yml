@@ -34,11 +34,15 @@ services:
       - OC_URL=https://opencloud.mueller-nas.de
       - NATS_NATS_HOST=0.0.0.0
       - FRONTEND_CHECK_FOR_UPDATES=true
-      - OC_OIDC_ISSUER=https://auth.mueller-nas.de/application/o/opencloud/
+      - OC_OIDC_ISSUER=https://auth.mueller-nas.de/
       - IDP_DOMAIN=auth.mueller-nas.de
       - OC_OIDC_CLIENT_ID=web
       - OC_OIDC_CLIENT_SCOPES=openid profile email
       - PROXY_OIDC_REWRITE_WELLKNOWN=true
+      - PROXY_USER_OIDC_CLAIM=email
+      - PROXY_USER_CS3_CLAIM=mail
+      - WEBFINGER_DESKTOP_OIDC_CLIENT_ID=web
+      - WEBFINGER_DESKTOP_OIDC_CLIENT_SCOPES=openid profile email offline_access
       - PROXY_AUTOPROVISION_ACCOUNTS=true
     labels:
       - "traefik.enable=true"
