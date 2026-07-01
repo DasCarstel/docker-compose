@@ -26,6 +26,7 @@ services:
       - "traefik.http.routers.prowlarr-secure.entrypoints=https"
       - "traefik.http.routers.prowlarr-secure.rule=Host(`prowlarr.mueller-nas.de`)"
       - "traefik.http.routers.prowlarr-secure.tls=true"
+      - "traefik.http.routers.prowlarr-secure.middlewares=authentik@docker"
       - "traefik.http.routers.prowlarr-secure.service=prowlarr" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
       - "traefik.http.services.prowlarr.loadbalancer.server.port=9696" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
       - "traefik.http.routers.sabnzbd.entrypoints=http"
@@ -36,6 +37,7 @@ services:
       - "traefik.http.routers.sabnzbd-secure.entrypoints=https"
       - "traefik.http.routers.sabnzbd-secure.rule=Host(`sabnzbd.mueller-nas.de`)"
       - "traefik.http.routers.sabnzbd-secure.tls=true"
+      - "traefik.http.routers.sabnzbd-secure.middlewares=authentik@docker"
       - "traefik.http.routers.sabnzbd-secure.service=sabnzbd" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
       - "traefik.http.services.sabnzbd.loadbalancer.server.port=10097" # Has to use the same servies per app https://community.traefik.io/t/could-not-define-the-service-name-for-the-router-too-many-services/5514/2
       - "traefik.docker.network=proxy"
@@ -116,6 +118,7 @@ services:
       - "traefik.http.routers.sonarr-secure.entrypoints=https"
       - "traefik.http.routers.sonarr-secure.rule=Host(`sonarr.mueller-nas.de`)"
       - "traefik.http.routers.sonarr-secure.tls=true"
+      - "traefik.http.routers.sonarr-secure.middlewares=authentik@docker"
       - "traefik.http.routers.sonarr-secure.service=sonarr"
       - "traefik.http.services.sonarr.loadbalancer.server.port=8989"
       - "traefik.docker.network=proxy"
@@ -151,6 +154,7 @@ services:
       - "traefik.http.routers.radarr-secure.entrypoints=https"
       - "traefik.http.routers.radarr-secure.rule=Host(`radarr.mueller-nas.de`)"
       - "traefik.http.routers.radarr-secure.tls=true"
+      - "traefik.http.routers.radarr-secure.middlewares=authentik@docker"
       - "traefik.http.routers.radarr-secure.service=radarr"
       - "traefik.http.services.radarr.loadbalancer.server.port=7878"
       - "traefik.docker.network=proxy"
