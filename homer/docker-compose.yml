@@ -18,6 +18,7 @@ services:
       - "traefik.http.routers.homer-secure.entrypoints=https"
       - "traefik.http.routers.homer-secure.rule=Host(`homer.mueller-nas.de`)"
       - "traefik.http.routers.homer-secure.tls=true"
+      - "traefik.http.routers.homer-secure.middlewares=authentik@docker"
       - "traefik.http.routers.homer-secure.service=homer"
       - "traefik.http.services.homer.loadbalancer.server.port=8080"
       - "traefik.docker.network=proxy"

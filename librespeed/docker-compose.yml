@@ -31,6 +31,7 @@ services:
       - "traefik.http.routers.librespeed-secure.entrypoints=https"
       - "traefik.http.routers.librespeed-secure.rule=Host(`librespeed.mueller-nas.de`)"
       - "traefik.http.routers.librespeed-secure.tls=true"
+      - "traefik.http.routers.librespeed-secure.middlewares=authentik@docker"
       - "traefik.http.routers.librespeed-secure.service=librespeed"
       - "traefik.http.services.librespeed.loadbalancer.server.port=80"
       - "traefik.docker.network=proxy"

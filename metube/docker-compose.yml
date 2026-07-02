@@ -18,6 +18,7 @@ services:
       - "traefik.http.routers.metube-secure.entrypoints=https"
       - "traefik.http.routers.metube-secure.rule=Host(`metube.mueller-nas.de`)"
       - "traefik.http.routers.metube-secure.tls=true"
+      - "traefik.http.routers.metube-secure.middlewares=authentik@docker"
       - "traefik.http.routers.metube-secure.service=metube"
       - "traefik.http.services.metube.loadbalancer.server.port=8081"
       - "traefik.docker.network=proxy"
