@@ -1,0 +1,17 @@
+services:
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:8
+    container_name: recyclarr
+    user: 1000:1000
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - /etc/docker/recyclarr/configs:/config/configs
+    networks:
+      - prowlarr-sabnzbd-sonarr-radarr_mynetwork
+
+
+networks:
+  prowlarr-sabnzbd-sonarr-radarr_mynetwork:
+    external: true
