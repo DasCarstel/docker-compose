@@ -22,6 +22,8 @@ services:
       - OIDC_LOGOUT_URL=${OIDC_LOGOUT_URL}
       - OIDC_AUTO_REDIRECT=${OIDC_AUTO_REDIRECT}
       - HTTPS=${HTTPS}
+      - INTERNAL_API_URL=${INTERNAL_API_URL}
+      - OIDC_GROUPS_SCOPE=${OIDC_GROUPS_SCOPE}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/docker/cronmaster/scripts:/app/scripts
@@ -35,7 +37,6 @@ services:
       - "traefik.http.routers.cronmaster.entrypoints=https"
       - "traefik.http.routers.cronmaster.tls=true"
       - "traefik.http.routers.cronmaster.tls.certresolver=cloudflare"
-      - "traefik.http.routers.cronmaster.middlewares=authentik@docker"
       - "traefik.http.services.cronmaster.loadbalancer.server.port=3000"
       - "traefik.docker.network=proxy"
 
