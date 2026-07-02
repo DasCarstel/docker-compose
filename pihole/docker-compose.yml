@@ -8,10 +8,8 @@ services:
       - "53:53/tcp"
       - "53:53/udp"
       #- "67:67/udp" # Only required if you are using Pi-hole as your DHCP server
-      - "8080:80/tcp"
     environment:
       TZ : Europe/Berlin
-      WEBPASSWORD: psy*WMhjrfhTA.9c6v-4vWNFcVAWmK9F
     # Volumes store your data between container upgrades
     volumes:
       - /etc/docker/pihole/config:/etc/pihole
@@ -29,6 +27,7 @@ services:
       - "traefik.http.routers.pihole-secure.entrypoints=https"
       - "traefik.http.routers.pihole-secure.rule=Host(`pihole.mueller-nas.de`)"
       - "traefik.http.routers.pihole-secure.tls=true"
+      - "traefik.http.routers.pihole-secure.middlewares=authentik@docker,pihole-sso@docker"
       - "traefik.http.routers.pihole-secure.service=pihole"
       - "traefik.http.services.pihole.loadbalancer.server.port=80"
       - "traefik.docker.network=proxy"
@@ -36,6 +35,24 @@ services:
       proxy:
     security_opt:
       - no-new-privileges:false # https://github.com/pi-hole/docker-pi-hole/issues/536#issuecomment-571908446
+
+  pihole-sso:
+    container_name: pihole-sso
+    image: python:3.11-alpine
+    restart: unless-stopped
+    command: sh -c "python3 /app/sso.py"
+    environment:
+      - PIHOLE_PASSWORD=sso-pihole-pw
+    volumes:
+      - /etc/docker/pihole/sso:/app
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.pihole-sso.forwardauth.address=http://pihole-sso:8080/"
+      - "traefik.http.middlewares.pihole-sso.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.pihole-sso.forwardauth.authResponseHeaders=X-FTL-SID,X-FTL-CSRF"
+      - "traefik.http.services.pihole-sso.loadbalancer.server.port=8080"
 
 networks:
   proxy:
