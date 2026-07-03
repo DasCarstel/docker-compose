@@ -169,6 +169,7 @@ services:
       - /etc/docker/bazarr:/config
       - /mnt/Mediathek/Serien:/Mediathek/Serien
       - /mnt/Mediathek/Filme:/Mediathek/Filme
+      - /mnt/Mediathek/Anime:/Mediathek/Anime
     environment:
       - PUID=1000
       - PGID=1000
