@@ -58,8 +58,9 @@ services:
     depends_on:
       - db
       - broker
-    ports:
-      - "8010:8000"
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - "8010:8000"
     volumes:
       - /etc/docker/paperless-ngx/data:/usr/src/paperless/data
       - /etc/docker/paperless-ngx/media:/usr/src/paperless/media

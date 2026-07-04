@@ -25,6 +25,8 @@ services:
     networks:
       - excalidash-network
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test:
         [
@@ -48,6 +50,8 @@ services:
       - excalidash-network
       - proxy
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test:
         [

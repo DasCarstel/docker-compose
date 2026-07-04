@@ -5,9 +5,12 @@ services:
     restart: unless-stopped
     volumes:
       - /etc/docker/quartz/content:/usr/src/app/content:ro
-    ports:
-      - "3131:3001"
-      - "8089:8080"
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - "3131:3001"
+    #   - "8089:8080"
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     labels:
@@ -52,11 +55,14 @@ services:
       - /etc/docker/quartz/runtime:/etc/docker/quartz/runtime
       - /etc/docker/quartz/.env:/etc/docker/quartz/.env:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    ports:
-      - "3080:3080"
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - "3080:3080"
     environment:
       - QUARTZ_ENV_FILE=/etc/docker/quartz/.env
     command: sh -c "apk add --no-cache docker-cli >/dev/null && cd /app && [ -d node_modules ] || npm install --omit=dev && node webhook.mjs"
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
 

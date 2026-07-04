@@ -5,6 +5,7 @@ services:
     image: ghcr.io/scanopy/scanopy/daemon:latest
     container_name: scanopy-daemon
     network_mode: host
+    # SECURITY: privileged + host network — nur beibehalten wenn zwingend nötig
     privileged: true
     restart: unless-stopped
     environment:
@@ -38,8 +39,9 @@ services:
 
   server:
     image: ghcr.io/scanopy/scanopy/server:latest
-    ports:
-      - "60072:60072"
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - "60072:60072"
     environment:
       SCANOPY_LOG_LEVEL: ${SCANOPY_LOG_LEVEL:-info}
       SCANOPY_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/scanopy
@@ -56,6 +58,8 @@ services:
       daemon:
         condition: service_started
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     networks:
       - scanopy
       - proxy

@@ -54,8 +54,9 @@ services:
       - /etc/docker/authentik/custom-templates:/templates
     env_file:
       - .env
-    ports:
-      - "0.0.0.0:9000:9000"
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - "0.0.0.0:9000:9000"
     networks:
       proxy:
         ipv4_address: 192.168.80.90
@@ -87,6 +88,8 @@ services:
       - "traefik.http.routers.authentik-oc-signin.service=authentik"
       - "traefik.http.routers.authentik-oc-signin.tls=true"
       - "traefik.http.routers.authentik-oc-signin.tls.certresolver=cloudflare"
+    security_opt:
+      - no-new-privileges:true
 
   worker:
     image: ${AUTHENTIK_IMAGE:-ghcr.io/goauthentik/server}:${AUTHENTIK_TAG:-latest}

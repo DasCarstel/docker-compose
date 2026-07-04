@@ -8,12 +8,13 @@ services:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
-    ports:
-      - 8888:8888/tcp # HTTP proxy
-      - 8388:8388/tcp # Shadowsocks
-      - 8388:8388/udp # Shadowsocks
-      - 9696:9696 # Prowlarr
-      - 10097:10097 # sabnzbd
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 8888:8888/tcp # HTTP proxy
+    #   - 8388:8388/tcp # Shadowsocks
+    #   - 8388:8388/udp # Shadowsocks
+    #   - 9696:9696 # Prowlarr
+    #   - 10097:10097 # sabnzbd
     volumes:
       - /etc/docker/gluetun:/gluetun
     labels:
@@ -102,8 +103,9 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=UTC
-    ports:
-      - 8989:8989
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 8989:8989
     networks:
       mynetwork:
         ipv4_address: 172.21.0.5
@@ -138,8 +140,9 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=UTC
-    ports:
-      - 7878:7878
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 7878:7878
     networks:
       mynetwork:
         ipv4_address: 172.21.0.4 #needs to start at 4, low numbers a not possible 
@@ -174,8 +177,9 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=UTC
-    ports:
-      - 6767:6767
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 6767:6767
     networks:
       mynetwork:
         ipv4_address: 172.21.0.6
@@ -194,6 +198,8 @@ services:
       - "traefik.http.routers.bazarr-secure.service=bazarr"
       - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
       - "traefik.docker.network=proxy"
+    security_opt:
+      - no-new-privileges:true
 
 networks:
   mynetwork:

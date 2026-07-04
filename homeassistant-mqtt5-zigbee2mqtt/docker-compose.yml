@@ -6,8 +6,9 @@ services:
     container_name: homeassistant
     image: ghcr.io/home-assistant/home-assistant:stable
     #image: homeassistant/homeassistant:2025.1.3
-    ports:
-      - 8123:8123
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 8123:8123
     volumes:
       - /etc/docker/homeassistant:/config
       - /etc/localtime:/etc/localtime:ro
@@ -15,7 +16,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock # https://github.com/ualex73/monitor_docker?tab=readme-ov-file
     environment:
       - TZ=Europe/Berlin
-    privileged: true
+    # privileged: true  # Ersetzt durch spezifische Capabilities (Security Hardening)
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_RAWIO
+    # devices:  # Keine USB-Devices noetig (HA nutzt Zigbee2MQTT via MQTT)
+    #   - /dev/serial/by-id/usb-dresden_elektronik_ingenieurtechnik_GmbH_ConBee_II_DE2684786-if00
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -53,9 +60,10 @@ services:
   mqtt5:
     image: eclipse-mosquitto
     container_name: mqtt5
-    ports:
-      - 1883:1883 #default mqtt port
-      - 9001:9001 #default mqtt port for websockets
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 1883:1883 #default mqtt port
+    #   - 9001:9001 #default mqtt port for websockets
     volumes:
       - /etc/docker/mqtt/config:/mosquitto/config:rw
       - /etc/docker/mqtt/data:/mosquitto/data:rw
@@ -67,8 +75,8 @@ services:
       #proxy:
       mqqtnetwork:
         ipv4_address: 172.41.0.5
-    #security_opt:
-      #- no-new-privileges:true
+    security_opt:
+      - no-new-privileges:true
 
   
 ###---zigbee2mqtt---####
@@ -76,8 +84,9 @@ services:
   zigbee2mqtt:
     container_name: zigbee2mqtt
     image: koenkk/zigbee2mqtt:latest
-    ports:
-      - 8082:8080 # Frontend port
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 8082:8080 # Frontend port
     volumes:
       - /etc/docker/zigbee2mqtt:/app/data
       - /run/udev:/run/udev:ro

@@ -10,8 +10,9 @@ services:
       - hostname=https://obsidian-livesync.mueller-nas.de
       - username=${COUCHDB_USER}
       - password=${COUCHDB_PASSWORD}
-    ports:
-      - 5984:5984
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 5984:5984
     volumes:
       - /etc/docker/obsidian-livesync/data:/opt/couchdb/data
       - /etc/docker/obsidian-livesync/etc:/opt/couchdb/etc/local.d

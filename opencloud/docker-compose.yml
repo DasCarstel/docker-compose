@@ -6,6 +6,8 @@ services:
     image: opencloudeu/opencloud:7.2.0
     container_name: opencloud
     restart: always
+    security_opt:
+      - no-new-privileges:true
     entrypoint: ["/bin/sh"]
     command: ["-c", "opencloud init || true; opencloud server"]
     networks:
@@ -70,6 +72,7 @@ services:
     security_opt:
       - seccomp=unconfined
       - apparmor:unconfined
+      - no-new-privileges:true
     networks:
       - opencloud-net
       - proxy
@@ -103,6 +106,8 @@ services:
     image: opencloudeu/opencloud:7.2.0
     container_name: collaboration
     restart: always
+    security_opt:
+      - no-new-privileges:true
     entrypoint: ["/bin/sh"]
     command: ["-c", "opencloud collaboration server"]
     depends_on:

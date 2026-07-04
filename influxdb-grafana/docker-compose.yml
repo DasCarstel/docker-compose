@@ -2,11 +2,12 @@ services:
   influxdb:
     image: influxdb:2
     container_name: influxdb
-    ports:
-      - "8083:8083"
-      - "8086:8086" # frontend port
-      - "8090:8090"
-      - "2003:2003"
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - "8083:8083"
+    #   - "8086:8086" # frontend port
+    #   - "8090:8090"
+    #   - "2003:2003"
     networks:
       influxdb:
         ipv4_address: 172.45.0.4 #needs to start at 4, low numbers a not possible 
@@ -39,8 +40,9 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
-    ports:
-      - "3000:3000"
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - "3000:3000"
     networks:
       influxdb:
       proxy:

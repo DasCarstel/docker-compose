@@ -1,8 +1,9 @@
 services:
   ollama:
     image: ollama/ollama:latest
-    ports:
-      - 11434:11434
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 11434:11434
     volumes:
       - /etc/docker/ollama/config:/root/.ollama/config
       - /mnt/ai/ollama/models:/root/.ollama/models
@@ -11,6 +12,8 @@ services:
     container_name: ollama
     tty: true
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     networks:
       ollama:
 
@@ -21,8 +24,9 @@ services:
       - /etc/docker/open-webui:/app/backend/data
     depends_on:
       - ollama
-    ports:
-      - 3005:8080
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 3005:8080
     environment:
       - 'OLLAMA_BASE_URL=http://ollama:11434'
       - 'WEBUI_URL=https://openwebui.mueller-nas.de'

@@ -22,8 +22,9 @@ services:
       - /mnt/OneDrive/Bilder/:/mnt/OneDrive/Bilder/ ## For external libaries https://immich.app/docs/features/libraries/#import-paths
     env_file:
       - .env
-    ports:
-      - '2283:2283'
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - '2283:2283'
     depends_on:
       - redis
       - database

@@ -3,6 +3,8 @@ services:
     image: vaultwarden/server:latest
     container_name: vaultwarden
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     networks:
       - proxy
     volumes:
@@ -20,9 +22,10 @@ services:
      - SSO_CLIENT_SECRET=${SSO_CLIENT_SECRET}
      - SSO_SCOPES=openid profile email offline_access
      - SSO_SIGNUPS_MATCH_EMAIL=true
+     - SSO_CLIENT_CACHE_EXPIRATION=${SSO_CLIENT_CACHE_EXPIRATION}
+     - SSO_AUTH_ONLY_NOT_SESSION=${SSO_AUTH_ONLY_NOT_SESSION}
      - SSO_PKCE=true
-     - SSO_DEBUG_TOKENS=true
-     - LOG_LEVEL=info,vaultwarden::sso=debug
+     - LOG_LEVEL=info
     labels:
       - traefik.enable=true
       - traefik.http.routers.vaultwarden.entrypoints=http

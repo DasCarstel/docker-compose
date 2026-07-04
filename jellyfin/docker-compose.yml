@@ -15,11 +15,12 @@ services:
       - /mnt/Mediathek/Anime:/Anime
     extra_hosts:
       - 'host.docker.internal:host-gateway' # Optional - may be necessary for docker healthcheck to pass if running in host network mode
-    ports:
-      - 8096:8096
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+      # - 8096:8096
       # - 8920:8920 # optional
-      - 7359:7359 #/udp #optional
-      - 1900:1900 #/udp #optional
+      # - 7359:7359 #/udp #optional
+      # - 1900:1900 #/udp #optional
     restart: unless-stopped
     #runtime: nvidia
     #deploy:

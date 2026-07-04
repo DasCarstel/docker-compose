@@ -46,8 +46,9 @@ services:
       - no-new-privileges:true # Need for labels in treafik
     ## Server port mapping in the format "Host:Container". To use a different port, change the host port on
     ## the left-hand side and keep the container port, e.g. "80:2342" (for HTTP) or "443:2342 (for HTTPS):
-    ports:
-      - "2344:2344"
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - "2344:2344"
     ## Before you start the service, please check the following config options (and change them as needed):
     ## https://docs.photoprism.app/getting-started/config-options/
     environment:
