@@ -53,7 +53,7 @@ services:
 
   webserver:
     container_name: paperless-ngx
-    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    image: ghcr.io/paperless-ngx/paperless-ngx:3.0.0-beta.rc1
     restart: unless-stopped
     depends_on:
       - db
@@ -87,7 +87,7 @@ services:
       PAPERLESS_OCR_LANGUAGES: deu
 # Adjust this key if you plan to make paperless available publicly. It should
 # be a very long sequence of random characters. You don't need to remember it.
-      #PAPERLESS_SECRET_KEY: change-me
+      PAPERLESS_SECRET_KEY: DVpQ6TmSUf43C4LEZwEo6VDBf4VFg8QWHt8vS8TA5ANW7BLCcd96X2kY4rYEeEwk
 # Use this variable to set a timezone for the Paperless Docker containers. If not specified, defaults to UTC.
       PAPERLESS_TIME_ZONE: Europe/Berlin
       PAPERLESS_APPS: allauth.socialaccount.providers.openid_connect
@@ -99,7 +99,18 @@ services:
       PAPERLESS_OCR_LANGUAGE: deu
       PAPERLESS_URL: https://paperless-ngx.mueller-nas.de
       PAPERLESS_CSRF_TRUSTED_ORIGINS: "https://paperless-ngx.mueller-nas.de,https://intern-paperless-ngx.mueller-nas.de"
-      PAPERLESS_FILENAME_FORMAT: "{document_type}/{correspondent}/{title}"
+      PAPERLESS_FILENAME_FORMAT: "{{ document_type }}/{{ correspondent }}/{{ title }}"
+      # AI Features (v3.0.0-beta.rc1)
+      PAPERLESS_AI_ENABLED: "true"
+      PAPERLESS_AI_LLM_BACKEND: ollama
+      PAPERLESS_AI_LLM_MODEL: qwen3.5:9b
+      PAPERLESS_AI_LLM_ENDPOINT: http://ollama:11434
+      PAPERLESS_AI_LLM_OUTPUT_LANGUAGE: de
+      PAPERLESS_AI_LLM_REQUEST_TIMEOUT: "300"
+      PAPERLESS_AI_LLM_ALLOW_INTERNAL_ENDPOINTS: "true"
+      PAPERLESS_AI_LLM_EMBEDDING_BACKEND: ollama
+      PAPERLESS_AI_LLM_EMBEDDING_MODEL: nomic-embed-text-v2-moe:latest
+      PAPERLESS_AI_LLM_EMBEDDING_ENDPOINT: http://ollama:11434
     labels:
       - "traefik.enable=true"
       # Erste Domain: paperless-ngx.mueller-nas.de
@@ -126,6 +137,7 @@ services:
     networks:
       proxy:
       internal:
+      ollama:
     security_opt:
       - no-new-privileges:true
 
@@ -133,3 +145,5 @@ networks:
   proxy:
     external: true
   internal:
+  ollama:
+    external: true
