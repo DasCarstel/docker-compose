@@ -1,0 +1,40 @@
+services:
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    init: true
+    container_name: seerr
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - LOG_LEVEL=info
+    volumes:
+      - /etc/docker/seerr/config:/app/config
+    networks:
+      prowlarr-sabnzbd-sonarr-radarr_mynetwork:
+        ipv4_address: 172.21.0.8
+      proxy:
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/settings/public || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seerr.entrypoints=http"
+      - "traefik.http.routers.seerr.rule=Host(`seerr.mueller-nas.de`)"
+      - "traefik.http.middlewares.seerr-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.seerr.middlewares=seerr-https-redirect"
+      - "traefik.http.routers.seerr-secure.entrypoints=https"
+      - "traefik.http.routers.seerr-secure.rule=Host(`seerr.mueller-nas.de`)"
+      - "traefik.http.routers.seerr-secure.tls=true"
+      - "traefik.http.routers.seerr-secure.service=seerr"
+      - "traefik.http.routers.seerr-secure.middlewares=authentik@docker"
+      - "traefik.http.services.seerr.loadbalancer.server.port=5055"
+      - "traefik.docker.network=proxy"
+
+networks:
+  prowlarr-sabnzbd-sonarr-radarr_mynetwork:
+    external: true
+  proxy:
+    external: true
