@@ -2,7 +2,7 @@ services:
   couchdb:
     image: couchdb:latest
     container_name: obsidian-livesync-couchdb
-    restart: unless-stopped
+    # restart: unless-stopped  # decommissioned 2026-07-18
     user: 1000:1000
     environment:
       - COUCHDB_USER=${COUCHDB_USER}
