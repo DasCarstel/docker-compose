@@ -6,15 +6,23 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Berlin
-      - WHISPER_MODEL=small-int8
+      - WHISPER_MODEL=medium-int8
       - WHISPER_BEAM=1 #optional
       - WHISPER_LANG=de #optional
     volumes:
-      - /etc/docker/faster-whisper:/config
+      - /mnt/ai/faster-whisper:/config
     # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
     # ports:
     #   - 10300:10300
     restart: unless-stopped
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     security_opt:
       - no-new-privileges:true
   
