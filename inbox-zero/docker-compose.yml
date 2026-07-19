@@ -40,7 +40,7 @@ services:
   web:
     image: ghcr.io/elie222/inbox-zero:latest
     container_name: inbox-zero
-    pull_policy: always
+    pull_policy: missing
     restart: always
     env_file:
       - .env
@@ -52,6 +52,7 @@ services:
     networks:
       - inbox-zero-network
       - proxy
+      - ollama
     environment:
       NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-inboxzero}?schema=public
@@ -141,5 +142,7 @@ services:
 
 networks:
   inbox-zero-network:
+  ollama:
+    external: true
   proxy:
     external: true
