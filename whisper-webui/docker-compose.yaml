@@ -5,7 +5,7 @@ services:
     image: jhj0517/whisper-webui:v1.0.7-fef3d69
 
     volumes:
-      - /etc/docker/whisper-webui/models:/Whisper-WebUI/models
+      - /mnt/ai/whisper-webui/models:/Whisper-WebUI/models
       - /etc/docker/whisper-webui/outputs:/Whisper-WebUI/outputs
       - /etc/docker/whisper-webui/configs:/Whisper-WebUI/configs
 
@@ -18,6 +18,14 @@ services:
     entrypoint: ["python", "app.py", "--server_port", "7860", "--server_name", "0.0.0.0",]
 
     restart: unless-stopped
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.whisper-webui.entrypoints=http"
