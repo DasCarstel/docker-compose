@@ -1,0 +1,29 @@
+services:
+  maintainerr:
+    image: ghcr.io/maintainerr/maintainerr:latest
+    container_name: maintainerr
+    user: 1000:1000
+    volumes:
+      - /etc/docker/maintainerr:/opt/data
+    environment:
+      - TZ=Europe/Berlin
+    networks:
+      - proxy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.maintainerr.entrypoints=http"
+      - "traefik.http.routers.maintainerr.rule=Host(`maintainerr.mueller-nas.de`)"
+      - "traefik.http.middlewares.maintainerr-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.maintainerr.middlewares=maintainerr-https-redirect"
+      - "traefik.http.routers.maintainerr-secure.entrypoints=https"
+      - "traefik.http.routers.maintainerr-secure.rule=Host(`maintainerr.mueller-nas.de`)"
+      - "traefik.http.routers.maintainerr-secure.tls=true"
+      - "traefik.http.routers.maintainerr-secure.middlewares=authentik@docker"
+      - "traefik.http.routers.maintainerr-secure.service=maintainerr"
+      - "traefik.http.services.maintainerr.loadbalancer.server.port=6246"
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    external: true
