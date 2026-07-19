@@ -27,6 +27,7 @@ services:
       - "traefik.docker.network=proxy"
     extra_hosts:
       - "auth.mueller-nas.de:192.168.80.1"
+      - "ollama:172.23.0.3"
     security_opt:
       - no-new-privileges:true
     environment:
@@ -58,7 +59,7 @@ services:
       POSTGRES_DB: linkwarden
       POSTGRES_USER: linkwardenuser
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    restart: on-failure:5
+    restart: unless-stopped
     networks:
       linkwarden_internal:
         ipv4_address: 172.23.0.4
@@ -89,6 +90,7 @@ services:
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXT_PUBLIC_DISABLE_REGISTRATION: false
+      NEXT_PUBLIC_ADMIN: 3
       MEILI_HOST: http://localhost:7700
       MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
       NEXT_PUBLIC_AUTHENTIK_ENABLED: ${NEXT_PUBLIC_AUTHENTIK_ENABLED}
@@ -96,6 +98,11 @@ services:
       AUTHENTIK_ISSUER: ${AUTHENTIK_ISSUER}
       AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID}
       AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET}
+      OPENAI_API_KEY: ollama
+      CUSTOM_OPENAI_BASE_URL: http://ollama:11434/v1
+      OPENAI_MODEL: qwen3.5:9b-8192
+      # DISABLE_PRESERVATION: "true" = keine Archive & keine Previews | "false" = normal (Previews werden immer generiert, unabhängig von Archive Settings)
+      DISABLE_PRESERVATION: "false"
     restart: on-failure:5
     depends_on:
       gluetun:

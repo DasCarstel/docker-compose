@@ -114,7 +114,9 @@ def sync_to_encrypted(key: bytes, metadata: dict) -> dict:
     changed = 0
     
     for plain_path in DECRYPTED_DIR.rglob("*"):
-        if plain_path.is_file() and plain_path.name == ".sync_metadata":
+        if not plain_path.is_file():
+            continue
+        if plain_path.name == ".sync_metadata":
             continue
         
         rel = plain_path.relative_to(DECRYPTED_DIR).as_posix()
