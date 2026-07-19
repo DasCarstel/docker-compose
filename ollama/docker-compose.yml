@@ -7,14 +7,23 @@ services:
     volumes:
       - /etc/docker/ollama/config:/root/.ollama/config
       - /mnt/ai/ollama/models:/root/.ollama/models
-    environment:
-      - OLLAMA_MODELS=/root/.ollama/models
     container_name: ollama
     tty: true
     restart: unless-stopped
+    runtime: nvidia
+    environment:
+      - OLLAMA_MODELS=/root/.ollama/models
+      - OLLAMA_KEEP_ALIVE=-1
+      - OLLAMA_CONTEXT_LENGTH=131072
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_KV_CACHE_TYPE=q8_0
+      - OLLAMA_NUM_PARALLEL=4
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     security_opt:
       - no-new-privileges:true
     networks:
+      proxy:
       ollama:
 
   open-webui:
@@ -41,7 +50,8 @@ services:
       - 'OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}'
       - 'OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}'
       - 'OPENID_REDIRECT_URI=https://openwebui.mueller-nas.de/oauth/oidc/callback'
-      - 'OAUTH_SCOPES=openid email profile'
+      - 'OAUTH_SCOPES=openid email profile offline_access'
+      - 'DEFAULT_MODELS=qwen3.5:9b-128k'
     extra_hosts:
       - host.docker.internal:host-gateway
     restart: unless-stopped
