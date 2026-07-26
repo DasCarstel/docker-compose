@@ -29,6 +29,7 @@ services:
       - /etc/docker/cronmaster/scripts:/app/scripts
       - /etc/docker/cronmaster/data:/app/data
       - /etc/docker/cronmaster/snippets:/app/snippets
+      - /opt/docker-compose:/opt/docker-compose
     networks:
       - proxy
     labels:
