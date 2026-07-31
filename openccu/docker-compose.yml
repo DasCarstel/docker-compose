@@ -1,0 +1,34 @@
+services:
+  openccu:
+    image: ghcr.io/openccu/openccu:latest
+    container_name: ccu
+    hostname: ccu
+    read_only: true
+    privileged: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    cap_add:
+      - SYS_NICE
+    cpu_shares: 4096
+    volumes:
+      - ccu_data:/usr/local:rw
+      - /lib/modules:/lib/modules:ro
+      - ./firewall.conf:/usr/local/etc/config/firewall.conf:ro
+      - ./restrict-webui.sh:/etc/init.d/S99zzz-restrict-webui:ro
+    devices:
+      - /dev/ttyUSB0:/dev/ttyUSB0
+    networks:
+      ccu:
+        ipv4_address: 10.0.10.14
+volumes:
+  ccu_data:
+networks:
+  ccu:
+    name: ccu
+    driver: macvlan
+    driver_opts:
+      parent: eth0
+    ipam:
+      config:
+        - subnet: 10.0.10.0/24
+          gateway: 10.0.10.1
