@@ -36,7 +36,7 @@ services:
       - "traefik.http.routers.whisper-webui-secure.rule=Host(`whisper-webui.mueller-nas.de`)"
       - "traefik.http.routers.whisper-webui-secure.tls=true"
       - "traefik.http.routers.whisper-webui-secure.service=whisper-webui"
-      - "traefik.http.routers.whisper-webui-secure.middlewares=authentik@docker"
+      - "traefik.http.routers.whisper-webui-secure.middlewares=whisper-unload@docker,authentik@docker"
       - "traefik.http.services.whisper-webui.loadbalancer.server.port=7860"
       - "traefik.docker.network=proxy"
     networks:
@@ -44,6 +44,33 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  manager:
+    image: python:3.12-alpine
+    container_name: ollama-whisper-manager
+    command: >
+      sh -c "pip install -q flask requests &&
+             python /app/app.py"
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen3.5:9b-128k
+      - RELOAD_DELAY=1800
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./manager/app.py:/app/app.py:ro
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.whisper-unload.forwardauth.address=http://manager:5000/check"
+      - "traefik.http.services.manager.loadbalancer.server.port=5000"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+      ollama:
+
 networks:
   proxy:
+    external: true
+  ollama:
     external: true
