@@ -15,6 +15,19 @@ services:
       - /lib/modules:/lib/modules:ro
       - /etc/docker/openccu/firewall.conf:/usr/local/etc/config/firewall.conf:ro
       - /etc/docker/openccu/restrict-webui.sh:/etc/init.d/S99zzz-restrict-webui:ro
+      # Patch: CGIs umgehen Lighttpd-Proxy für ReGaHss-Aufrufe (Port 8183 statt 80).
+      # Hintergrund: Im OpenCCU-Container (macvlan, read_only) entsteht ein Deadlock,
+      # wenn ein CGI aus Lighttpd heraus eine HTTP-Anfrage zurück an Lighttpd stellt.
+      # Worker A (CGI) → Lighttpd Port 80 → Proxy → ReGaHss → Antwort blockiert,
+      # weil kein freier Lighttpd-Worker verfügbar ist. Auf physischer CCU-Hardware
+      # tritt das nicht auf (anderes Webserver-Setup, mehr Worker).
+      # Fix: login.tcl/renew.tcl/create.tcl senden Session-Requests direkt
+      # an ReGaHss:8183 statt durch Lighttpd:80.
+      # Ohne diesen Patch scheitert die HACS-Integration homematicip_local beim Setup
+      # und Session.renew verliert nach einigen Minuten die Verbindung.
+      - /etc/docker/openccu/login.tcl:/www/api/methods/session/login.tcl:ro
+      - /etc/docker/openccu/renew.tcl:/www/api/methods/session/renew.tcl:ro
+      - /etc/docker/openccu/create.tcl:/www/api/methods/session/create.tcl:ro
     devices:
       - /dev/ttyUSB0:/dev/ttyUSB0
     networks:
