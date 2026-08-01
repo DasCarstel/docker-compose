@@ -13,8 +13,8 @@ services:
     volumes:
       - ccu_data:/usr/local:rw
       - /lib/modules:/lib/modules:ro
-      - ./firewall.conf:/usr/local/etc/config/firewall.conf:ro
-      - ./restrict-webui.sh:/etc/init.d/S99zzz-restrict-webui:ro
+      - /etc/docker/openccu/firewall.conf:/usr/local/etc/config/firewall.conf:ro
+      - /etc/docker/openccu/restrict-webui.sh:/etc/init.d/S99zzz-restrict-webui:ro
     devices:
       - /dev/ttyUSB0:/dev/ttyUSB0
     networks:
