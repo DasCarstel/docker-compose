@@ -52,8 +52,9 @@ services:
       - SERVER_COUNTRIES=${SERVER_COUNTRIES}
       - TZ=Europe/Berlin
     networks:
-      - mynetwork
-      - proxy
+      mynetwork:
+        ipv4_address: 172.21.0.3
+      proxy:
     restart: unless-stopped
       
   ###---prowlarr---####
