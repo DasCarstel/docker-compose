@@ -6,9 +6,8 @@ services:
     container_name: homeassistant
     image: ghcr.io/home-assistant/home-assistant:stable
     #image: homeassistant/homeassistant:2025.1.3
-    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
-    # ports:
-    #   - 8123:8123
+    ports:
+      - "21222:21222"   # XML-RPC Callback für homematicip_local
     volumes:
       - /etc/docker/homeassistant:/config
       - /etc/localtime:/etc/localtime:ro
