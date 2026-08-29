@@ -64,7 +64,12 @@ class AbsClient:
         try:
             with urllib.request.urlopen(req, timeout=60) as resp:
                 payload = resp.read()
-                return json.loads(payload) if payload else {}
+                if not payload:
+                    return {}
+                try:
+                    return json.loads(payload)
+                except ValueError:
+                    return {"raw": payload.decode(errors="replace")[:200]}
         except urllib.error.HTTPError as e:
             raise RuntimeError(f"HTTP {e.code} bei {path}: {e.read().decode(errors='replace')[:200]}") from e
 
