@@ -1,5 +1,6 @@
 import os
 import threading
+import time
 
 import requests
 from flask import Flask, Response, jsonify
@@ -13,6 +14,7 @@ RELOAD_DELAY = int(os.environ.get("RELOAD_DELAY", "1800"))
 _lock = threading.Lock()
 _timer = None
 _unloaded = False
+_last_idle_log = 0
 
 print(f"[init] OLLAMA_URL={OLLAMA_URL} MODEL={OLLAMA_MODEL} RELOAD_DELAY={RELOAD_DELAY}s")
 
@@ -50,20 +52,20 @@ def _reload_model():
         print("[reload] model reloaded, keep_alive=-1")
 
 
-def _reset_timer():
+def _reset_timer(verbose=False):
     global _timer
     if _timer:
         _timer.cancel()
     _timer = threading.Timer(RELOAD_DELAY, _reload_model)
     _timer.daemon = True
     _timer.start()
-    remaining_min = RELOAD_DELAY // 60
-    print(f"[timer] reset, reload in {remaining_min} min")
+    if verbose:
+        print(f"[timer] reset, reload in {RELOAD_DELAY // 60} min")
 
 
 @app.route("/check")
 def check():
-    global _unloaded
+    global _unloaded, _last_idle_log
     with _lock:
         try:
             ps = requests.get(f"{OLLAMA_URL}/api/ps", timeout=5).json()
@@ -75,13 +77,16 @@ def check():
             print("[check] model loaded, unloading...")
             if _unload_model():
                 _unloaded = True
-                _reset_timer()
+                _reset_timer(verbose=True)
             else:
                 print("[check] unload failed")
         else:
-            print("[check] no model loaded")
             _unloaded = True
             _reset_timer()
+            now = time.time()
+            if now - _last_idle_log > 300:
+                print("[heartbeat] model unloaded, waiting for reload...")
+                _last_idle_log = now
 
     return Response("OK", status=200)
 
