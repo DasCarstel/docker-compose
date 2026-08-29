@@ -33,6 +33,7 @@ DEFAULT_CONFIG = {
 }
 
 INVALID_CHARS = re.compile(r'[\\/:*?"<>|\x00-\x1f]')
+LEADING_NUM = re.compile(r'^\d+[\s._-]+')  # z.B. "312 - " am Tracktitel
 
 log = logging.getLogger("abs-renamer")
 
@@ -82,7 +83,7 @@ class AbsClient:
         return items
 
     def get_item(self, item_id: str) -> dict:
-        return self._request("GET", f"/items/{item_id}")
+        return self._request("GET", f"/items/{item_id}?expanded=1")
 
     def scan_library(self, lib_id: str) -> None:
         self._request("POST", f"/libraries/{lib_id}/scan", body={})
@@ -164,6 +165,11 @@ def plan_item(item: dict, cfg: dict) -> tuple[list[dict], list[dict], dict]:
                 continue
             idx = t.get("index") or 0
             track_title = t.get("title") or tpath.stem
+            if track_title.lower().endswith(tpath.suffix.lower()):  # Endung im Titel vermeiden
+                track_title = track_title[: -len(tpath.suffix)].strip()
+            stripped = LEADING_NUM.sub("", track_title).strip()
+            if stripped:
+                track_title = stripped  # pro Buch neu nummerieren
             target_name = f"{str(idx).zfill(digits)} - {sanitize(track_title)}{tpath.suffix}"
             if tpath.name != target_name:
                 file_ops.append({"src": tpath, "dst_name": target_name, "ino": t.get("ino")})
@@ -210,8 +216,8 @@ def build_plan(client: AbsClient, cfg: dict, only_item: str | None) -> dict:
             names = ", ".join(f"{l['name']} ({l['id']})" for l in libs)
             raise RuntimeError(f"Library '{cfg['library_name']}' nicht gefunden. Verfügbar: {names}")
         items = client.get_library_items(lib["id"])
-
-    log.info(f"Library '{lib['name']}': {len(items)} Items geladen, Details werden abgerufen ...")
+        log.info(f"Library '{lib['name']}': {len(items)} Items geladen, Details werden abgerufen ...")
+        items = [client.get_item(i["id"]) for i in items]  # expanded-Details (Autoren, Tracks)
 
     operations, skipped, notes = [], [], []
     planned = 0
@@ -222,7 +228,8 @@ def build_plan(client: AbsClient, cfg: dict, only_item: str | None) -> dict:
         skipped.append(entry)
         if entry["status"] == "planned":
             planned += 1
-        log.info(f"  [{entry['status']:>8}] {entry['current']}  ({entry['reason']})")
+        reason = entry.get("reason") or f"{entry.get('operations')} Op(s) geplant"
+        log.info(f"  [{entry['status']:>8}] {entry['current']}  ({reason})")
     for n in notes:
         log.warning(f"  HINWEIS: {n}")
 
