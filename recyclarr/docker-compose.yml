@@ -9,7 +9,8 @@ services:
     volumes:
       - /etc/docker/recyclarr/configs:/config/configs
     networks:
-      - prowlarr-sabnzbd-sonarr-radarr_mynetwork
+      prowlarr-sabnzbd-sonarr-radarr_mynetwork:
+        ipv4_address: 172.21.0.7
 
 
 networks:
