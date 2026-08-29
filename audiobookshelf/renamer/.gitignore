@@ -1,0 +1,4 @@
+config.local.json
+plans/
+*.log
+__pycache__/
