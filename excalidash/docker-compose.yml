@@ -11,12 +11,12 @@ services:
       - TRUST_PROXY=1
       - ENFORCE_HTTPS_REDIRECT=false
       - FRONTEND_URL=https://excalidash.mueller-nas.de
-      - JWT_SECRET=d187fc7eecf297c29e79b75d1e5943b25ad510114cb1c0a4d677c4abeac41fdf
-      - CSRF_SECRET=d1c25990cce90b35081c1c2b18c1e2357ab5a1d08a419df2e23591a80db18d1c
+      - JWT_SECRET=${JWT_SECRET}
+      - CSRF_SECRET=${CSRF_SECRET}
       - OIDC_PROVIDER_NAME=Authentik
       - OIDC_ISSUER_URL=https://auth.mueller-nas.de/application/o/excalidash/
       - OIDC_CLIENT_ID=6ByoliKkTvzCYDzD1ClgLvlVU1kfQdryfemwfX12
-      - OIDC_CLIENT_SECRET=enjXeXxAzMHe3Ocjqr9WMsmYkT0gQxSqXPA9eiYG5Ml4QRc0uSI0WcjWCaHC0R5uWL3yqipluNU3UMQAAN9CpZyYoQKjYFtzvbhe7GgGwu9jYiMqH5lWcqJrM3PXJ3ek
+      - OIDC_CLIENT_SECRET=${OIDC_CLIENT_SECRET}
       - OIDC_REDIRECT_URI=https://excalidash.mueller-nas.de/api/auth/oidc/callback
       - OIDC_SCOPES=openid profile email
       - OIDC_REQUIRE_EMAIL_VERIFIED=false
