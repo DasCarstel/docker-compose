@@ -6,7 +6,6 @@ services:
     environment:
       - TZ=Etc/UTC
       - PORT=13378
-      - ROUTER_BASE_PATH=/
     volumes:
       - /etc/docker/audiobookshelf:/config
       - /mnt/Mediathek/Hörbücher:/audiobooks
