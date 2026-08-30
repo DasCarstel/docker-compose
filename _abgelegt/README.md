@@ -12,7 +12,7 @@ Hier liegen Services/Konfigurationen, die **nicht mehr benutzt** werden.
 - `authelia/` — SSO/Login-Portal. Ersatz: `authentik/`.
 - `changedetection/` — Überwachung von Webseiten-Änderungen.
 - `excalidraw/` — Whiteboard/Zeichnen. Ersatz: `excalidash/`.
-- `koreader-sync/` — Lese-Fortschritt-Sync für KOReader. Ersatz: `bookbridge/`.
+- `koreader-sync/` — Lese-Fortschritt-Sync für KOReader. Ersatz: `bookbridge/` (jetzt im audiobookshelf-Stack).
 - `n8n/` — Workflow-Automatisierung.
 - `obsidian-livesync/` — Obsidian-Sync via CouchDB.
 - `photoprism-archiv/` — Foto-Verwaltung (Archiv). Ersatz: `immich-fam/`.
