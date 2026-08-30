@@ -9,6 +9,7 @@ services:
     volumes:
       - /etc/docker/audiobookshelf:/config
       - /mnt/Mediathek/Hörbücher:/audiobooks
+      - /mnt/Mediathek/Buecher:/books:ro
       - /etc/docker/audiobookshelf/metadata:/metadata
     restart: unless-stopped
     security_opt:

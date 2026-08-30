@@ -1,0 +1,29 @@
+services:
+  bookbridge:
+    image: ghcr.io/cporcellijr/bookbridge:latest
+    container_name: bookbridge
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Berlin
+      - LOG_LEVEL=INFO
+      - ABS_SERVER=http://audiobookshelf:13378
+      - KOSYNC_ENABLED=true
+      - KOSYNC_HASH_METHOD=content
+      - SYNC_ABS_EBOOK=true
+    volumes:
+      - /etc/docker/bookbridge:/data
+      - /mnt/Mediathek/Buecher:/books:ro
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bookbridge.rule=Host(`bookbridge.mueller-nas.de`)"
+      - "traefik.http.routers.bookbridge.entrypoints=https"
+      - "traefik.http.routers.bookbridge.tls=true"
+      - "traefik.http.routers.bookbridge.tls.certresolver=cloudflare"
+      - "traefik.http.services.bookbridge.loadbalancer.server.port=5757"
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    external: true
