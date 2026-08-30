@@ -179,9 +179,26 @@ def plan_item(item: dict, cfg: dict) -> tuple[list[dict], list[dict], dict]:
             if tpath.name != target_name:
                 file_ops.append({"src": tpath, "dst_name": target_name, "ino": t.get("ino")})
 
+    # --- Ebook-Datei (Bücher: media.ebookFile statt tracks) ---
+    ebook = (item.get("media") or {}).get("ebookFile")
+    if ebook:
+        epath = container_to_local((ebook.get("metadata") or {}).get("path", ""), cfg)
+        if epath is None:
+            epath = container_to_local(ebook.get("path", ""), cfg)
+        if epath and epath.is_file():
+            target_name = sanitize(title) + epath.suffix
+            if epath.name != target_name:
+                file_ops.append({"src": epath, "dst_name": target_name, "ino": ebook.get("ino")})
+
     for op in file_ops:
         dst = op["src"].parent / op["dst_name"]
+        same = False
         if dst.exists():
+            try:
+                same = os.path.samefile(dst, op["src"])
+            except OSError:
+                same = False
+        if dst.exists() and not same:
             notes.append(f"Ziel existiert bereits, Datei übersprungen: {dst.name} (in {folder_local.name})")
         else:
             ops.append({"type": "file", "src": str(op["src"]), "dst": str(dst), "ino": op["ino"]})
@@ -216,7 +233,9 @@ def build_plan(client: AbsClient, cfg: dict, only_item: str | None) -> dict:
         lib = next((l for l in libs if l["id"] == lib_id), {"id": lib_id, "name": lib_id})
         items = [one]
     else:
-        lib = next((l for l in libs if cfg["library_name"].lower() in (l.get("name") or "").lower()), None)
+        lib = next((l for l in libs if (l.get("name") or "").lower() == cfg["library_name"].lower()), None)
+        if lib is None:
+            lib = next((l for l in libs if cfg["library_name"].lower() in (l.get("name") or "").lower()), None)
         if lib is None:
             names = ", ".join(f"{l['name']} ({l['id']})" for l in libs)
             raise RuntimeError(f"Library '{cfg['library_name']}' nicht gefunden. Verfügbar: {names}")
@@ -268,7 +287,15 @@ def apply_plan(plan: dict) -> None:
     done, failed = 0, 0
     for op in files + folders:  # files first, then folders
         try:
-            os.rename(op["src"], op["dst"])
+            if os.path.exists(op["dst"]) and os.path.samefile(op["src"], op["dst"]):
+                try:
+                    os.rename(op["src"], op["dst"])  # Case-only-Rename
+                except OSError:
+                    tmp = op["src"] + ".renaming_tmp"
+                    os.rename(op["src"], tmp)
+                    os.rename(tmp, op["dst"])
+            else:
+                os.rename(op["src"], op["dst"])
             done += 1
             log.info(f"  umbenannt: {op['src']} -> {op['dst']}")
         except OSError as e:
@@ -296,6 +323,7 @@ def undo_plan(plan: dict) -> None:
 
 def main():
     p = argparse.ArgumentParser(description="Rename audiobook folders/files via ABS metadata")
+    p.add_argument("--config", metavar="PFAD", help="alternative Config-Datei (Default: config.local.json)")
     p.add_argument("--apply", action="store_true", help="ausführen (Default: Dry-Run)")
     p.add_argument("--yes", action="store_true", help="Rückfrage bei --apply überspringen")
     p.add_argument("--item", metavar="ID", help="nur ein bestimmtes ABS-Item (Testlauf)")
@@ -303,6 +331,10 @@ def main():
     args = p.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    global CONFIG_FILE
+    if args.config:
+        CONFIG_FILE = Path(args.config)
 
     cfg = load_config()
     client = AbsClient(cfg["base_url"], cfg["api_key"])
