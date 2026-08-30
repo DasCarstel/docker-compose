@@ -11,30 +11,7 @@ services:
       - /etc/docker/lazylibrarian:/config
       - /mnt/Mediathek/Buecher:/books
       - /mnt/SABnzbd/downloads/books:/downloads/books
-    networks:
-      mynetwork:
-        ipv4_address: 172.21.0.9
-      proxy:
+    network_mode: "container:gluetun"
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.lazylibrarian.entrypoints=http"
-      - "traefik.http.routers.lazylibrarian.rule=Host(`lazylibrarian.mueller-nas.de`)"
-      - "traefik.http.middlewares.lazylibrarian-https-redirect.redirectscheme.scheme=https"
-      - "traefik.http.routers.lazylibrarian.middlewares=lazylibrarian-https-redirect"
-      - "traefik.http.routers.lazylibrarian-secure.entrypoints=https"
-      - "traefik.http.routers.lazylibrarian-secure.rule=Host(`lazylibrarian.mueller-nas.de`)"
-      - "traefik.http.routers.lazylibrarian-secure.tls=true"
-      - "traefik.http.routers.lazylibrarian-secure.middlewares=authentik@docker"
-      - "traefik.http.routers.lazylibrarian-secure.service=lazylibrarian"
-      - "traefik.http.services.lazylibrarian.loadbalancer.server.port=5299"
-      - "traefik.docker.network=proxy"
     security_opt:
       - no-new-privileges:true
-
-networks:
-  mynetwork:
-    external: true
-    name: prowlarr-sabnzbd-sonarr-radarr_mynetwork
-  proxy:
-    external: true
