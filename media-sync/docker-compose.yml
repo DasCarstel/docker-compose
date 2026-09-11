@@ -8,6 +8,7 @@ services:
     volumes:
       - /etc/docker/media-sync/.env:/app/.env
       - /etc/docker/media-sync/ssh/media_sync_ed25519:/app/ssh_key:ro
+      - /etc/docker/media-sync/ssh/t7_mount_ed25519:/app/ssh_key_t7:ro
       - /etc/docker/media-sync/state:/app/state
     networks:
       - proxy
