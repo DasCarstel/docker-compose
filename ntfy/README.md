@@ -5,7 +5,8 @@ Oeffentlich: https://ntfy.mueller-nas.de (Traefik + Cloudflare-Wildcard).
 
 ## Betrieb
 - Compose: /opt/docker-compose/ntfy/docker-compose.yml
-- Daten:   /etc/docker/ntfy (cache.db, auth.db, attachments)
+- Daten:   /etc/docker/ntfy (cache.db, auth.db, attachments, credentials.env)
+- Helfer:  /etc/docker/ntfy/publish.sh <src-user> <topic> <msg> [prio] [title] [tags]
 - Netz:    proxy (Traefik, exposedByDefault=false)
 - Auth:    `NTFY_AUTH_DEFAULT_ACCESS=deny-all` + eigene User/Tokens
 - KEIN Authentik-forwardAuth: die nativen Clients (Android-App, Skripte, Gateway)
@@ -35,7 +36,32 @@ deshalb ueber die Topic-ACL des jeweiligen Users.
 
 ## Zugangsdaten
 `/etc/docker/ntfy/credentials.env` (0600, ausserhalb des Repos).
-Migration nach OpenBao `secret/data/mcp/notify` steht noch aus (Admin-Token noetig).
+Migration nach OpenBao `secret/data/mcp/notify` offen (Admin-Token noetig).
+
+## Integrationen
+### Home Assistant (aktiv seit 16.10.2026)
+- `rest_command.ntfy` in /etc/docker/homeassistant/configuration.yaml
+  Aufruf: `topic`, `message`, optional `title`, `priority`, `tags` (Liste).
+- Token: `!secret ntfy_ha_token` aus /etc/docker/homeassistant/secrets.yaml.
+- Beispiel:
+  ```yaml
+  action: rest_command.ntfy
+  data:
+    topic: home
+    message: "Es ist Zeit zum Lueften"
+    title: "Home Assistant"
+    priority: 2
+    tags: ["window"]
+  ```
+- Hinweis: `mobile_app` bleibt vorerst parallel; Umbau der 26 Automationen folgt (Phase 4).
+
+### Monitoring
+- **Uptime Kuma**: Settings -> Notifications -> Setup Notification -> Typ **ntfy**,
+  Server-URL `https://ntfy.mueller-nas.de`, Topic `crit`, Priority `max`,
+  Authentication: Bearer-Token von `src-monitoring`, dann den Standard-Notify aktivieren.
+- **Grafana**: Alerting -> Contact points -> New -> **Webhook**,
+  URL `https://ntfy.mueller-nas.de/infra`, HTTP-Header
+  `Authorization: Bearer <token von src-monitoring>` (als "Sensitive" markieren).
 
 ## Publish (Beispiel)
 ```bash
@@ -46,6 +72,6 @@ curl -H "Authorization: Bearer $TOKEN" \
 ```
 
 ## Naechste Schritte
-- Phase 2: Quellen einhaengen (Hestia _event(), Uptime Kuma, Grafana, HA rest_command)
 - Phase 3: OpenCode-Plugin (session.idle / permission.asked), Hermes-Webhook
-- Phase 5: notify-Gateway (Digest, Ruhezeiten, Antworten A/B/C)
+- Phase 4: HA-Flut entzerren (crit vs home/Digest), 4 Notify-Ziele -> 1
+- Phase 5: notify-Gateway (Digest, Ruhezeiten, Antworten A/B/C), Windows-Client, Stream Deck
