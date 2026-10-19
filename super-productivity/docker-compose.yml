@@ -66,6 +66,59 @@ services:
     networks:
       - proxy
 
+  # Nur fuer den MCP: gleiche Daten, aber Nextcloud-kompatibler Pfad-Prefix.
+  webdav-shim:
+    image: hacdias/webdav:v5
+    restart: unless-stopped
+    expose:
+      - "2345"
+    environment:
+      - WEBDAV_PASSWORD=${WEBDAV_PASSWORD}
+    volumes:
+      - /etc/docker/webdav-super-productivity/config/webdav-shim.yaml:/etc/webdav/config.yaml:ro
+      - /etc/docker/superproductivity:/data
+    networks:
+      - proxy
+
+  mcp:
+    image: ghcr.io/samuelb/superproductivity-sync-mcp:0.2.0
+    container_name: super-productivity-mcp
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      - NEXTCLOUD_URL=http://webdav-shim:2345
+      - NEXTCLOUD_USER=admin
+      - NEXTCLOUD_PASSWORD=${WEBDAV_PASSWORD}
+      - NEXTCLOUD_SYNC_FOLDER=/
+      - NEXTCLOUD_ALLOW_HTTP=true
+      - SP_CLIENT_ID=sp-mcp-1
+      - SP_TIMEZONE=Europe/Berlin
+      - SP_WRITE_BACKUP=true
+      - SP_BACKUP_RETENTION_DAYS=7
+      - DATA_DIR=/data
+      - MCP_AUTH_TOKENS=${SP_MCP_TOKEN}
+      - MCP_ALLOWED_HOSTS=mcp-superproductivity.mueller-nas.de
+    volumes:
+      - sp-mcp-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sp-mcp.entrypoints=http"
+      - "traefik.http.routers.sp-mcp.rule=Host(`mcp-superproductivity.mueller-nas.de`)"
+      - "traefik.http.middlewares.sp-mcp-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.sp-mcp.middlewares=sp-mcp-https-redirect"
+      - "traefik.http.routers.sp-mcp-secure.entrypoints=https"
+      - "traefik.http.routers.sp-mcp-secure.rule=Host(`mcp-superproductivity.mueller-nas.de`)"
+      - "traefik.http.routers.sp-mcp-secure.tls=true"
+      - "traefik.http.routers.sp-mcp-secure.service=sp-mcp"
+      - "traefik.http.services.sp-mcp.loadbalancer.server.port=8000"
+      - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+
+volumes:
+  sp-mcp-data:
+
 networks:
   proxy:
     external: true
