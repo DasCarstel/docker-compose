@@ -45,5 +45,10 @@ services:
     # ports:
     #   - 10200:10200
     restart: unless-stopped
+    networks:
+      - voice-net
     security_opt:
       - no-new-privileges:true
+networks:
+  voice-net:
+    external: true

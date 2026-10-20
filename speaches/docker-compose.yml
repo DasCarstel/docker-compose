@@ -1,0 +1,180 @@
+# PRO-337: Zentrale Whisper-Infrastruktur (Speaches) — Variante D (2026-10-12)
+# Architektur:
+#   speaches      : Parakeet v3 (Diktat-Standard), STT_MODEL_TTL=-1  -> dauerhaft geladen
+#                   https://whisper.mueller-nas.de  (/v1 API + eigenes UI via authentik)
+#   speaches-srt  : Whisper large-v3-turbo (Video/SRT), STT_MODEL_TTL=300 -> entlaedt sich 5 min nach letztem SRT-Job selbst
+#                   https://srt.mueller-nas.de/v1/*  (API, Bearer-Key, KEIN authentik -- Uploads vom srt-tool/curl gehen hierher)
+#   srt-tool      : Mini-Upload-Seite fuer Video->SRT (srt-tool/app.py), SSO via authentik, Key nur im Browser
+#   manager       : whisper-unload-Middleware (entlaedt Qwen vor SRT-Whisper-Requests auf srt-api; whisper-secure seit Option B ausgenommen)
+services:
+  speaches:
+    image: ghcr.io/speaches-ai/speaches:0.9.0-rc.3-cuda-12.6.3
+    container_name: speaches
+    restart: unless-stopped
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - API_KEY=${SPEACHES_API_KEY}
+      # PRO-337 (12.10.25): interne Loopback-Basis fuer die UI-Server-Handler — sonst leiten
+      # `http`-Entrypoint / WAN-Redirects die serverseitigen OpenAI-Streaming-Calls auf text/html um
+      - LOOPBACK_HOST_URL=http://speaches:8000
+      - STT_MODEL_TTL=-1
+      - TTS_MODEL_TTL=300
+      - PRELOAD_MODELS=["istupakov/parakeet-tdt-0.6b-v3-onnx"]
+    volumes:
+      - /mnt/ai/speaches/hf-cache:/home/ubuntu/.cache/huggingface/hub
+      # PRO-337 Variante B: Serverseitiger API-Key-Prefill in der UI (SSO-geschuetzt; Overlay auf gepinnte 0.9.0-rc.3, bei Image-Update Re-Check)
+      - ./ui-overlay/app.py:/home/ubuntu/speaches/src/speaches/ui/app.py:ro
+      # PRO-337 (12.10.25): Stream-Checkbox-Default auf False — Parakeet unterstuetzt KEIN Streaming (NotImplementedError im Server); non-stream laeuft
+      - ./ui-overlay/tabs/stt.py:/home/ubuntu/speaches/src/speaches/ui/tabs/stt.py:ro
+      # PRO-337: Kurz-Aliasse (handyfreundlich: Model-Feld "parakeet" statt langer Modell-ID)
+      - ./model_aliases.json:/home/ubuntu/speaches/model_aliases.json:ro
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 127.0.0.1:8000:8000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.whisper-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.whisper.entrypoints=http"
+      - "traefik.http.routers.whisper.rule=Host(`whisper.mueller-nas.de`)"
+      - "traefik.http.routers.whisper.middlewares=whisper-https-redirect"
+      - "traefik.http.routers.whisper-secure.entrypoints=https"
+      - "traefik.http.routers.whisper-secure.rule=Host(`whisper.mueller-nas.de`)"
+      - "traefik.http.routers.whisper-secure.tls=true"
+      - "traefik.http.routers.whisper-secure.service=speaches"
+      # PRO-337 Option B (12.10.25): whisper-secure_laedt NICHT mehr — Qwen bleibt resident; whisper-unload nur noch auf srt-api
+      - "traefik.http.routers.whisper-secure.middlewares=authentik@docker"
+      - "traefik.http.routers.whisper-api.entrypoints=https"
+      - "traefik.http.routers.whisper-api.rule=Host(`whisper.mueller-nas.de`) && PathPrefix(`/v1`)"
+      - "traefik.http.routers.whisper-api.tls=true"
+      - "traefik.http.routers.whisper-api.service=speaches"
+      # PRO-337 Co-Residenz (12.10.25): Diktat-Route entlädt Qwen NICHT mehr — Qwen+Parakeet resident; whisper-unload nur noch auf srt-api
+      # - "traefik.http.routers.whisper-api.middlewares=whisper-unload@docker"
+      - "traefik.http.services.speaches.loadbalancer.server.port=8000"
+      - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+    security_opt:
+      - no-new-privileges:true
+
+  # Wyoming-Proxy auf speaches: HA-Assist-STT mit Parakeet v3 (de).
+  # HA erreicht den Dienst ueber das Docker-Netz voice-net: wyoming-openai:10350
+  wyoming-openai:
+    image: ghcr.io/roryeckel/wyoming_openai:latest
+    container_name: wyoming-openai
+    restart: unless-stopped
+    environment:
+      - WYOMING_URI=tcp://0.0.0.0:10350
+      - WYOMING_LOG_LEVEL=INFO
+      - WYOMING_LANGUAGES=de
+      - STT_OPENAI_URL=http://speaches:8000/v1
+      - STT_OPENAI_KEY=${SPEACHES_API_KEY}
+      - STT_MODELS=istupakov/parakeet-tdt-0.6b-v3-onnx
+      - STT_BACKEND=SPEACHES
+    networks:
+      - proxy
+      - voice-net
+    security_opt:
+      - no-new-privileges:true
+
+  speaches-srt:
+    image: ghcr.io/speaches-ai/speaches:0.9.0-rc.3-cuda-12.6.3
+    container_name: speaches-srt
+    restart: unless-stopped
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - API_KEY=${SPEACHES_API_KEY}
+      - STT_MODEL_TTL=300
+      - TTS_MODEL_TTL=300
+      - ENABLE_UI=false
+    volumes:
+      - /mnt/ai/speaches/hf-cache-srt:/home/ubuntu/.cache/huggingface/hub
+      # PRO-337: Kurz-Aliasse (srt-Instanz: "whisper-turbo" nutzbar)
+      - ./model_aliases.json:/home/ubuntu/speaches/model_aliases.json:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.srt-api.entrypoints=https"
+      - "traefik.http.routers.srt-api.rule=Host(`srt.mueller-nas.de`) && PathPrefix(`/v1`)"
+      - "traefik.http.routers.srt-api.tls=true"
+      - "traefik.http.routers.srt-api.service=speaches-srt"
+      - "traefik.http.routers.srt-api.middlewares=whisper-unload@docker"
+      - "traefik.http.services.speaches-srt.loadbalancer.server.port=8000"
+      - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+    security_opt:
+      - no-new-privileges:true
+
+  srt-tool:
+    image: python:3.12-alpine
+    container_name: whisper-srt-tool
+    command: >
+      sh -c "pip install -q flask &&
+             python /app/app.py"
+    volumes:
+      - ./srt-tool/app.py:/app/app.py:ro
+    environment:
+      # PRO-337 Auto-Inject: Key wird (SSO-geschuetzt) via /session an die Seite uebergeben
+      - SPEACHES_API_KEY=${SPEACHES_API_KEY}
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.srt-secure.entrypoints=https"
+      - "traefik.http.routers.srt-secure.rule=Host(`srt.mueller-nas.de`)"
+      - "traefik.http.routers.srt-secure.tls=true"
+      - "traefik.http.routers.srt-secure.service=srt-tool"
+      - "traefik.http.routers.srt-secure.middlewares=authentik@docker"
+      - "traefik.http.services.srt-tool.loadbalancer.server.port=5000"
+    networks:
+      - proxy
+    security_opt:
+      - no-new-privileges:true
+
+  manager:
+    image: python:3.12-alpine
+    container_name: whisper-unload-manager
+    command: >
+      sh -c "pip install -q flask requests &&
+             python /app/app.py"
+    env_file:
+      - /opt/docker-compose/_shared/ai.env
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - RELOAD_DELAY=1800
+      - RELOAD_KEEP_ALIVE=300
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./manager/app.py:/app/app.py:ro
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.middlewares.whisper-unload.forwardauth.address=http://manager:5000/check"
+      - "traefik.http.services.whisper-unload-manager.loadbalancer.server.port=5000"
+    networks:
+      - proxy
+      - ollama
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
+  ollama:
+    external: true
+  voice-net:
+    external: true

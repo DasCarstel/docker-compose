@@ -51,6 +51,7 @@ services:
       proxy:
       mqqtnetwork:
         ipv4_address: 172.41.0.6
+      voice-net:
     security_opt:
       - no-new-privileges:true
 
@@ -124,3 +125,5 @@ networks:
     ipam:
       config:
         - subnet: 172.41.0.0/24
+  voice-net:
+    external: true
