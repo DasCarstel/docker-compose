@@ -1,0 +1,65 @@
+# Qwen3-ASR 0.6B als zweite STT-Engine (Test/Benchmark)
+#   qwen3-asr    : vLLM, OpenAI-kompatibel (POST /v1/audio/transcriptions), Modell "qwen3-asr"
+#   wyoming-qwen3: Wyoming-Bridge fuer Home Assistant (Port 10351, nur voice-net)
+# Kein Traefik, kein externer Zugriff.
+services:
+  qwen3-asr:
+    image: vllm/vllm-openai:latest
+    container_name: qwen3-asr
+    restart: unless-stopped
+    runtime: nvidia
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - HF_HOME=/data/hf
+      - VLLM_NO_USAGE_STATS=1
+    volumes:
+      - /mnt/ai/qwen3-asr/hf-cache:/data/hf
+    command:
+      - --model
+      - Qwen/Qwen3-ASR-0.6B
+      - --served-model-name
+      - qwen3-asr
+      - --gpu-memory-utilization
+      - "0.38"
+      - --enforce-eager
+      - --max-model-len
+      - "4096"
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+    networks:
+      - proxy
+      - voice-net
+    security_opt:
+      - no-new-privileges:true
+
+  wyoming-qwen3:
+    image: ghcr.io/roryeckel/wyoming_openai:latest
+    container_name: wyoming-qwen3
+    restart: unless-stopped
+    environment:
+      - WYOMING_URI=tcp://0.0.0.0:10351
+      - WYOMING_LOG_LEVEL=INFO
+      - WYOMING_LANGUAGES=de
+      - STT_OPENAI_URL=http://qwen3-asr:8000/v1
+      - STT_OPENAI_KEY=dummy
+      - STT_MODELS=qwen3-asr
+      - STT_BACKEND=OPENAI
+    networks:
+      - voice-net
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
+  voice-net:
+    external: true
