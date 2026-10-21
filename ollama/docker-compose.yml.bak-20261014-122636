@@ -1,0 +1,92 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 11434:11434
+    volumes:
+      - /etc/docker/ollama/config:/root/.ollama/config
+      - /mnt/ai/ollama/models:/root/.ollama/models
+    container_name: ollama
+    tty: true
+    restart: unless-stopped
+    runtime: nvidia
+    environment:
+      - OLLAMA_MODELS=/root/.ollama/models
+      - OLLAMA_KEEP_ALIVE=-1
+      - OLLAMA_CONTEXT_LENGTH=65536
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_KV_CACHE_TYPE=q8_0
+      - OLLAMA_NUM_PARALLEL=1
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      proxy:
+      ollama:
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    volumes:
+      - /etc/docker/open-webui:/app/backend/data
+    depends_on:
+      - ollama
+    # DEBUG: Bei Bedarf mit debug-ports.sh temporär aktivieren
+    # ports:
+    #   - 3005:8080
+    environment:
+      - 'OLLAMA_BASE_URL=http://ollama:11434'
+      - 'WEBUI_URL=https://openwebui.mueller-nas.de'
+      - 'WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}'
+      - 'ENABLE_OAUTH_SIGNUP=true'
+      - 'OAUTH_MERGE_ACCOUNTS_BY_EMAIL=true'
+      - 'ENABLE_LOGIN_FORM=false'
+      - 'ENABLE_PASSWORD_AUTH=false'
+      - 'ENABLE_PASSWORD_CHANGE_FORM=false'
+      - 'OAUTH_PROVIDER_NAME=authentik'
+      - 'OPENID_PROVIDER_URL=https://auth.mueller-nas.de/application/o/open-webui-sso/.well-known/openid-configuration'
+      - 'OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}'
+      - 'OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}'
+      - 'OPENID_REDIRECT_URI=https://openwebui.mueller-nas.de/oauth/oidc/callback'
+      - 'OAUTH_SCOPES=openid email profile offline_access'
+      - 'DEFAULT_MODELS=qwen3.5:9b-64k'
+      # PRO-337: zentrale Whisper-Instanz (Speaches) via Traefik -> whisper-unload-Middleware aktiv
+      - 'AUDIO_STT_ENGINE=openai'
+      - 'AUDIO_STT_OPENAI_API_BASE_URL=https://whisper.mueller-nas.de/v1'
+      - 'AUDIO_STT_OPENAI_API_KEY=${SPEACHES_API_KEY}'
+      - 'AUDIO_STT_MODEL=istupakov/parakeet-tdt-0.6b-v3-onnx'
+      - 'AUDIO_STT_SUPPORTED_CONTENT_TYPES=audio/webm,audio/wav,audio/mpeg,audio/mp4,video/mp4,video/webm'
+    extra_hosts:
+      - host.docker.internal:host-gateway
+      - "whisper.mueller-nas.de:host-gateway"
+      # Hermes-Agent-API ueber Traefik (Rule hermes-api.yml). Die feste IP haelt
+      # den Aufruf im LAN statt durch den Cloudflare-Tunnel — sonst kaeme der
+      # Container mit fremder Quell-IP an und die IP-Filterung greift nicht.
+      - "hermes.mueller-nas.de:10.0.10.10"
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openwebui.entrypoints=http"
+      - 'traefik.http.routers.openwebui.rule=Host(`openwebui.mueller-nas.de`)'
+      - "traefik.http.middlewares.openwebui-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.openwebui.middlewares=openwebui-https-redirect"
+      - "traefik.http.routers.openwebui-secure.entrypoints=https"
+      - 'traefik.http.routers.openwebui-secure.rule=Host(`openwebui.mueller-nas.de`)'
+      - "traefik.http.routers.openwebui-secure.tls=true"
+      - "traefik.http.routers.openwebui-secure.service=openwebui"
+      - "traefik.http.routers.openwebui-secure.middlewares=sslheader@docker"
+      - "traefik.http.services.openwebui.loadbalancer.server.port=8080"
+      - "traefik.docker.network=proxy"
+    networks:
+      proxy:
+      ollama:
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  ollama:
+    external: true
+  proxy:
+    external: true

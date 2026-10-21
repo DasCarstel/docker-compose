@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+# PRO-337 — srt-tool: klickbare Upload-Seite für Video→SRT/VTT/Text.
+# Siehe docker-compose.yml (Kommentarblock oben).
+#   Browser -> https://srt.mueller-nas.de (Traefik + authentik) -> diese Seite
+#   Browser -> https://srt.mueller-nas.de/v1/* (Traefik + whisper-unload) -> speaches-srt
+# API-Key: Auto-Inject — /session (EGENFALLS SSO-geschuetzt via authentik-Middleware) liefert den
+# Key aus der Container-Umgebung (docker-compose: SPEACHES_API_KEY), die Seite legt ihn im
+# Browser-LocalStorage ab. Manuelles Feld bleibt als Fallback. Nicht ins Repo/Logs.
+from flask import Flask, Response, jsonify
+import os
+
+HTML = r"""<!doctype html>
+<html lang="de">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SRT-Tool — Video → Untertitel</title>
+<style>
+ body{font-family:sans-serif;max-width:640px;margin:2rem auto;padding:0 1rem;background:#fafafa;color:#222}
+ fieldset{margin-bottom:1rem}
+ button{background:#0078d4;color:#fff;border:0;padding:.6rem 1.2rem;border-radius:.4rem;font-size:1rem;cursor:pointer}
+ #status{margin-top:1rem;font-weight:600;white-space:pre-wrap}
+ .row{display:flex;gap:.5rem;align-items:center;margin:.4rem 0;flex-wrap:wrap}
+</style></head>
+<body>
+<h1>Video → Untertitel-Datei (SRT/VTT) oder Text</h1>
+<p>Der Upload läuft an die zentrale Whisper-Instanz, die sich nach 5 Min ohne Nutzung automatisch aus dem VRAM entlädt.</p>
+<fieldset><legend>API-Key — einmalig, wird nur im Browser gespeichert</legend>
+ <input id="key" type="password" placeholder="API-Key einfügen" style="width:98%">
+</fieldset>
+<fieldset><legend>Auftrag</legend>
+ <div class="row"><label>Datei: <input id="file" type="file" accept="video/*,audio/*"></label></div>
+ <div class="row"><label>Sprache: <input id="lang" placeholder="de (leer = automatisch)" size="8"></label>
+ <label>Format: <select id="fmt"><option value="srt" selected>SRT (Untertitel)</option><option value="vtt">VTT</option><option value="text">reiner Text</option></select></label></div>
+ <button id="go">Transkribieren</button>
+</fieldset>
+<div id="status"></div>
+<script>
+ const K="srt_tool_key";
+ const el=id=>document.getElementById(id);
+ el("key").value=localStorage.getItem(K)||"";
+ async function autoKey(){
+  try{
+   const r=await fetch("/session");
+   if(!r.ok) return;
+   const d=await r.json();
+   if(d.api_key){ localStorage.setItem(K,d.api_key); el("key").value=d.api_key; }
+  }catch(e){}
+ }
+ autoKey();
+ el("go").onclick=async function(){
+  const key=el("key").value.trim(); if(!key){alert("API-Key fehlt");return;}
+  localStorage.setItem(K,key);
+  const f=el("file").files[0]; if(!f){alert("Keine Datei gewählt");return;}
+  const fmt=el("fmt").value, lang=el("lang").value.trim();
+  const fd=new FormData(); fd.append("file",f);
+  fd.append("model","deepdml/faster-whisper-large-v3-turbo-ct2");
+  if(lang) fd.append("language",lang);
+  fd.append("response_format",fmt);
+  el("status").textContent="Upload läuft … Whisper lädt beim Server (erster Job kann einige Sekunden bis Minuten dauern).";
+  try{
+   const r=await fetch("/v1/audio/transcriptions",{method:"POST",headers:{Authorization:"Bearer "+key},body:fd});
+   if(!r.ok){el("status").textContent="Fehler "+r.status+": "+(await r.text()).slice(0,300);return;}
+   const blob=await r.blob();
+   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+   a.download=f.name.replace(/\.[^.]+$/,"")+"."+(fmt==="text"?"txt":fmt);
+   a.click(); el("status").textContent="Fertig ✓ — Datei wurde heruntergeladen.";
+  }catch(e){el("status").textContent="Fehler: "+e;}
+ };
+</script>
+</body></html>"""
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return Response(HTML, content_type="text/html; charset=utf-8")
+
+@app.route("/session")
+def session():
+    # Nur nutzbar, wenn der Besucher die Seite (SSO) erreichen konnte —
+    # das Routing: Host(srt.mueller-nas.de) ohne /v1 -> authentik@docker -> hierher.
+    return jsonify({"api_key": os.environ.get("SPEACHES_API_KEY", "")})
+
+@app.route("/healthz")
+def healthz():
+    return "ok"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

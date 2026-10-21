@@ -13,11 +13,11 @@ services:
     runtime: nvidia
     environment:
       - OLLAMA_MODELS=/root/.ollama/models
-      - OLLAMA_KEEP_ALIVE=-1
+      - OLLAMA_KEEP_ALIVE=5m
       - OLLAMA_CONTEXT_LENGTH=131072
       - OLLAMA_FLASH_ATTENTION=1
       - OLLAMA_KV_CACHE_TYPE=q8_0
-      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_NUM_PARALLEL=1
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     security_opt:
@@ -25,6 +25,7 @@ services:
     networks:
       proxy:
       ollama:
+      voice-net:
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
@@ -42,6 +43,10 @@ services:
       - 'WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}'
       - 'ENABLE_OAUTH_SIGNUP=true'
       - 'OAUTH_MERGE_ACCOUNTS_BY_EMAIL=true'
+      # Gruppen aus dem OIDC-Claim uebernehmen. Ueber die Datenbank greift der
+      # Schluessel in dieser Open-WebUI-Version nicht (Config.get liefert None,
+      # Laufzeit bleibt False) - daher hier als Umgebungsvariable.
+      - 'ENABLE_OAUTH_GROUP_MANAGEMENT=true'
       - 'ENABLE_LOGIN_FORM=false'
       - 'ENABLE_PASSWORD_AUTH=false'
       - 'ENABLE_PASSWORD_CHANGE_FORM=false'
@@ -51,9 +56,22 @@ services:
       - 'OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}'
       - 'OPENID_REDIRECT_URI=https://openwebui.mueller-nas.de/oauth/oidc/callback'
       - 'OAUTH_SCOPES=openid email profile offline_access'
-      - 'DEFAULT_MODELS=qwen3.5:9b-128k'
+      - 'RAG_EMBEDDING_MODEL=intfloat/multilingual-e5-base'
+      # PRO-337: zentrale Whisper-Instanz (Speaches) via Traefik -> whisper-unload-Middleware aktiv
+      - 'AUDIO_STT_ENGINE=openai'
+      - 'AUDIO_STT_OPENAI_API_BASE_URL=http://qwen3-asr:8000/v1'
+      - 'AUDIO_STT_OPENAI_API_KEY=dummy'
+      - 'AUDIO_STT_MODEL=qwen3-asr'
+      - 'AUDIO_STT_SUPPORTED_CONTENT_TYPES=audio/webm,audio/wav,audio/mpeg,audio/mp4,video/mp4,video/webm'
+    env_file:
+      - /opt/docker-compose/_shared/ai.env
     extra_hosts:
       - host.docker.internal:host-gateway
+      - "whisper.mueller-nas.de:host-gateway"
+      # Hermes-Agent-API ueber Traefik (Rule hermes-api.yml). Die feste IP haelt
+      # den Aufruf im LAN statt durch den Cloudflare-Tunnel — sonst kaeme der
+      # Container mit fremder Quell-IP an und die IP-Filterung greift nicht.
+      - "hermes.mueller-nas.de:10.0.10.10"
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -71,10 +89,13 @@ services:
     networks:
       proxy:
       ollama:
+      voice-net:
     security_opt:
       - no-new-privileges:true
 
 networks:
+  voice-net:
+    external: true
   ollama:
     external: true
   proxy:
