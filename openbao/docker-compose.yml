@@ -1,0 +1,31 @@
+services:
+  openbao:
+    image: openbao/openbao:2.7.1
+    container_name: openbao
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    environment:
+      SKIP_CHOWN: "1"
+    volumes:
+      - /etc/docker/openbao/config:/openbao/config:ro
+      - /etc/docker/openbao/data:/openbao/file
+    networks:
+      - proxy
+    extra_hosts:
+      - "auth.mueller-nas.de:192.168.80.80"
+    command: ["server"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openbao.entrypoints=https"
+      - "traefik.http.routers.openbao.rule=Host(`openbao.mueller-nas.de`)"
+      - "traefik.http.routers.openbao.tls=true"
+      - "traefik.http.routers.openbao.tls.certresolver=cloudflare"
+      - "traefik.http.routers.openbao.middlewares=openbao-lan-only@docker"
+      - "traefik.http.middlewares.openbao-lan-only.ipallowlist.sourcerange=10.0.0.0/24,10.0.10.0/24"
+      - "traefik.http.services.openbao.loadbalancer.server.port=8200"
+      - "traefik.docker.network=proxy"
+
+networks:
+  proxy:
+    external: true

@@ -85,6 +85,8 @@ services:
     volumes:
       - /etc/docker/linkwarden/config:/data/data/config
       - linkwarden_archives_decrypted:/data/data/archives
+    env_file:
+      - /opt/docker-compose/_shared/ai.env
     environment:
       DATABASE_URL: postgres://linkwardenuser:${POSTGRES_PASSWORD}@172.23.0.4:5432/linkwarden
       NEXTAUTH_URL: ${NEXTAUTH_URL}
@@ -98,9 +100,7 @@ services:
       AUTHENTIK_ISSUER: ${AUTHENTIK_ISSUER}
       AUTHENTIK_CLIENT_ID: ${AUTHENTIK_CLIENT_ID}
       AUTHENTIK_CLIENT_SECRET: ${AUTHENTIK_CLIENT_SECRET}
-      OPENAI_API_KEY: ollama
       CUSTOM_OPENAI_BASE_URL: http://ollama:11434/v1
-      OPENAI_MODEL: qwen3.5:9b-8192
       # DISABLE_PRESERVATION: "true" = keine Archive & keine Previews | "false" = normal (Previews werden immer generiert, unabhängig von Archive Settings)
       DISABLE_PRESERVATION: "false"
     restart: on-failure:5

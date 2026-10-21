@@ -1,2 +1,11 @@
 *.env
 super-productivity/webdav.yaml
+github-runner/
+__pycache__/
+*.pyc
+*.log
+*.bak-*
+_backup-*/
+openbao/unseal-keys.txt
+*.env.pre-*
+*.env.bak-*

@@ -3,7 +3,7 @@ services:
   # 1. OPENCLOUD CORE SERVER
   # --------------------------------------------------------
   opencloud:
-    image: opencloudeu/opencloud:7.2.0
+    image: opencloudeu/opencloud:7.2.4
     container_name: opencloud
     restart: always
     security_opt:
@@ -103,7 +103,7 @@ services:
   # 3. OPENCLOUD COLLABORATION SERVER (WOPI / CS3)
   # --------------------------------------------------------
   collaboration:
-    image: opencloudeu/opencloud:7.2.0
+    image: opencloudeu/opencloud:7.2.4
     container_name: collaboration
     restart: always
     security_opt:
