@@ -57,17 +57,16 @@ services:
       - 'OPENID_REDIRECT_URI=https://openwebui.mueller-nas.de/oauth/oidc/callback'
       - 'OAUTH_SCOPES=openid email profile offline_access'
       - 'RAG_EMBEDDING_MODEL=intfloat/multilingual-e5-base'
-      # PRO-337: zentrale Whisper-Instanz (Speaches) via Traefik -> whisper-unload-Middleware aktiv
+      # PRO-337: zentrale STT-Instanz qwen3-asr (vLLM) im voice-net; Key = SPEACHES_API_KEY
       - 'AUDIO_STT_ENGINE=openai'
       - 'AUDIO_STT_OPENAI_API_BASE_URL=http://qwen3-asr:8000/v1'
-      - 'AUDIO_STT_OPENAI_API_KEY=dummy'
+      - 'AUDIO_STT_OPENAI_API_KEY=${SPEACHES_API_KEY}'
       - 'AUDIO_STT_MODEL=qwen3-asr'
       - 'AUDIO_STT_SUPPORTED_CONTENT_TYPES=audio/webm,audio/wav,audio/mpeg,audio/mp4,video/mp4,video/webm'
     env_file:
       - /opt/docker-compose/_shared/ai.env
     extra_hosts:
       - host.docker.internal:host-gateway
-      - "whisper.mueller-nas.de:host-gateway"
       # Hermes-Agent-API ueber Traefik (Rule hermes-api.yml). Die feste IP haelt
       # den Aufruf im LAN statt durch den Cloudflare-Tunnel — sonst kaeme der
       # Container mit fremder Quell-IP an und die IP-Filterung greift nicht.

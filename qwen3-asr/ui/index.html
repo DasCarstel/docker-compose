@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprache zu Text</title>
+<style>
+  :root { color-scheme: light dark; --accent:#2f6fed; --bg:#f6f7f9; --card:#fff; --text:#1b1f24; --muted:#68707c; --line:#dde1e6; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14171b; --card:#1c2026; --text:#e8ebef; --muted:#9aa3ae; --line:#2c323a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px 64px; background:var(--bg); color:var(--text);
+         font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:760px; margin:0 auto; }
+  h1 { font-size:1.4rem; margin:0 0 4px; }
+  p.sub { margin:0 0 24px; color:var(--muted); font-size:.9rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  button, label.btn { border:1px solid var(--line); background:var(--card); color:var(--text);
+      border-radius:8px; padding:9px 14px; font:inherit; cursor:pointer; }
+  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  button.rec { border-color:#d9534f; color:#d9534f; font-weight:600; }
+  button.rec.on { background:#d9534f; color:#fff; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  select { font:inherit; padding:8px; border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--text); }
+  textarea { width:100%; min-height:180px; resize:vertical; font:inherit; padding:12px;
+      border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text); }
+  .status { color:var(--muted); font-size:.85rem; min-height:1.4em; margin-top:10px; }
+  .drop { border:2px dashed var(--line); border-radius:12px; padding:22px; text-align:center; color:var(--muted); }
+  .drop.hot { border-color:var(--accent); color:var(--accent); }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#d9534f; margin-right:7px; vertical-align:1px; }
+  .dot.hidden { display:none; }
+  a { color:var(--accent); }
+  footer { color:var(--muted); font-size:.8rem; text-align:center; margin-top:24px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sprache zu Text</h1>
+  <p class="sub">Qwen3-ASR auf <code>stt.mueller-nas.de</code> &middot; kurze Diktate und Dateien bis 100 MB</p>
+
+  <div class="card">
+    <div class="row">
+      <button id="rec" class="rec"><span class="dot hidden" id="dot"></span>Aufnahme starten</button>
+      <label class="btn" for="file">Datei w&auml;hlen</label>
+      <input id="file" type="file" accept="audio/*,video/*" hidden>
+      <select id="lang" title="Sprache">
+        <option value="">Automatisch</option>
+        <option value="de">Deutsch</option>
+        <option value="en">Englisch</option>
+      </select>
+    </div>
+    <div class="status" id="status">Bereit.</div>
+  </div>
+
+  <div class="card">
+    <div class="drop" id="drop">Audiodatei hier hineinziehen</div>
+  </div>
+
+  <div class="card">
+    <textarea id="out" placeholder="Transkript erscheint hier &hellip;" spellcheck="false"></textarea>
+    <div class="row" style="margin-top:12px">
+      <button id="copy">Kopieren</button>
+      <button id="save">Als .txt speichern</button>
+      <button id="clear">Leeren</button>
+    </div>
+  </div>
+
+  <footer>L&auml;uft lokal auf dem NAS &middot; kein Cloud-Dienst &middot; Anmeldung &uuml;ber Authentik</footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const statusEl = $("status"), out = $("out");
+let recorder = null, chunks = [], started = 0, timer = null;
+
+function setStatus(text, busy) {
+  statusEl.textContent = text;
+  $("rec").disabled = !!busy;
+  $("file").disabled = !!busy;
+}
+
+/* ---- Audio -> 16 kHz Mono WAV ---- */
+async function toWav(blob) {
+  const raw = await blob.arrayBuffer();
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  let decoded;
+  try {
+    decoded = await ctx.decodeAudioData(raw);
+  } finally {
+    ctx.close();
+  }
+  const rate = 16000;
+  const frames = Math.max(1, Math.ceil(decoded.duration * rate));
+  const offline = new OfflineAudioContext(1, frames, rate);
+  const src = offline.createBufferSource();
+  src.buffer = decoded;
+  src.connect(offline.destination);
+  src.start();
+  const rendered = await offline.startRendering();
+  return encodeWav(rendered.getChannelData(0), rate);
+}
+
+function encodeWav(samples, rate) {
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+  const str = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+  str(0, "RIFF"); view.setUint32(4, 36 + samples.length * 2, true); str(8, "WAVE");
+  str(12, "fmt "); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true); view.setUint32(24, rate, true);
+  view.setUint32(28, rate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+  str(36, "data"); view.setUint32(40, samples.length * 2, true);
+  let off = 44;
+  for (let i = 0; i < samples.length; i++, off += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return new Blob([view], { type: "audio/wav" });
+}
+
+/* ---- Transkription ---- */
+async function send(blob) {
+  const t0 = performance.now();
+  setStatus("Wandle Audio \u2026");
+  let wav;
+  try {
+    wav = await toWav(blob);
+  } catch (err) {
+    setStatus("Audio konnte nicht gelesen werden: " + err.message);
+    return;
+  }
+  const secs = (wav.size / 32000).toFixed(1);
+  setStatus("Transkribiere " + secs + " s Audio \u2026");
+  const lang = $("lang").value;
+  const url = "/api/transcribe" + (lang ? "?lang=" + lang : "");
+  try {
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "audio/wav" },
+      body: wav
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      setStatus("Fehler " + resp.status + ": " + (data.error || data.detail || "unbekannt"));
+      return;
+    }
+    out.value = (data.text || "").trim();
+    const ms = Math.round(performance.now() - t0);
+    setStatus(out.value ? "Fertig in " + ms + " ms (" + secs + " s Audio)." : "Keine Sprache erkannt.");
+  } catch (err) {
+    setStatus("Netzwerkfehler: " + err.message);
+  }
+}
+
+/* ---- Aufnahme ---- */
+$("rec").onclick = async () => {
+  if (recorder && recorder.state === "recording") {
+    recorder.stop();
+    return;
+  }
+  if (!navigator.mediaDevices || !window.MediaRecorder) {
+    setStatus("Dieser Browser kann nicht aufnehmen - bitte Datei w\u00e4hlen.");
+    return;
+  }
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    setStatus("Mikrofon verweigert: " + err.message);
+    return;
+  }
+  chunks = [];
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    stream.getTracks().forEach((t) => t.stop());
+    clearInterval(timer);
+    $("dot").classList.add("hidden");
+    $("rec").classList.remove("on");
+    $("rec").textContent = "Aufnahme starten";
+    const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+    recorder = null;
+    if (blob.size) send(blob); else setStatus("Keine Aufnahme.");
+  };
+  recorder.start();
+  started = Date.now();
+  $("dot").classList.remove("hidden");
+  $("rec").classList.add("on");
+  $("rec").textContent = "Aufnahme stoppen";
+  timer = setInterval(() => {
+    setStatus("Aufnahme l\u00e4uft \u2026 " + ((Date.now() - started) / 1000).toFixed(0) + " s");
+  }, 250);
+};
+
+/* ---- Datei / Drag & Drop ---- */
+$("file").onchange = (e) => { if (e.target.files[0]) send(e.target.files[0]); };
+const drop = $("drop");
+["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => {
+  e.preventDefault(); drop.classList.add("hot");
+}));
+["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => {
+  e.preventDefault(); drop.classList.remove("hot");
+}));
+drop.addEventListener("drop", (e) => {
+  const f = e.dataTransfer.files[0];
+  if (f) send(f);
+});
+
+/* ---- Ergebnis ---- */
+$("copy").onclick = async () => {
+  if (!out.value) return;
+  try { await navigator.clipboard.writeText(out.value); setStatus("In die Zwischenablage kopiert."); }
+  catch { out.select(); document.execCommand("copy"); setStatus("Kopiert."); }
+};
+$("save").onclick = () => {
+  if (!out.value) return;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([out.value], { type: "text/plain" }));
+  a.download = "transkript-" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".txt";
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+$("clear").onclick = () => { out.value = ""; setStatus("Bereit."); };
+</script>
+</body>
+</html>

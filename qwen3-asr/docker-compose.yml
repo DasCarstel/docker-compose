@@ -1,7 +1,10 @@
-# Qwen3-ASR 0.6B als zweite STT-Engine (Test/Benchmark)
-#   qwen3-asr    : vLLM, OpenAI-kompatibel (POST /v1/audio/transcriptions), Modell "qwen3-asr"
+# Qwen3-ASR 0.6B als einzige STT-Engine (Voice, Diktat, Open WebUI)
+#   qwen3-asr    : vLLM, OpenAI-kompatibel, oeffentlich als https://stt.mueller-nas.de/v1
+#                  (Bearer-Key, kein SSO - Handy-Apps sprechen die API direkt)
 #   wyoming-qwen3: Wyoming-Bridge fuer Home Assistant (Port 10351, nur voice-net)
-# Kein Traefik, kein externer Zugriff.
+#   stt-ui       : minimale Weboberflaeche unter https://stt.mueller-nas.de/ (Authentik)
+#
+# Ersetzt speaches/Parakeet und whisper.mueller-nas.de (2026-10-21 stillgelegt).
 services:
   qwen3-asr:
     image: vllm/vllm-openai:latest
@@ -19,6 +22,7 @@ services:
     environment:
       - HF_HOME=/data/hf
       - VLLM_NO_USAGE_STATS=1
+      - VLLM_API_KEY=${SPEACHES_API_KEY}
     volumes:
       - /mnt/ai/qwen3-asr/hf-cache:/data/hf
     command:
@@ -50,11 +54,32 @@ services:
       - WYOMING_LOG_LEVEL=INFO
       - WYOMING_LANGUAGES=de
       - STT_OPENAI_URL=http://qwen3-asr:8000/v1
-      - STT_OPENAI_KEY=dummy
+      - STT_OPENAI_KEY=${SPEACHES_API_KEY}
       - STT_MODELS=qwen3-asr
       - STT_BACKEND=OPENAI
     networks:
       - voice-net
+    security_opt:
+      - no-new-privileges:true
+
+  stt-ui:
+    image: python:3.12-alpine
+    container_name: stt-ui
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      - STT_UPSTREAM=http://qwen3-asr:8000/v1/audio/transcriptions
+      - STT_MODEL=qwen3-asr
+      - STT_API_KEY=${SPEACHES_API_KEY}
+      - PORT=8080
+    volumes:
+      - ./ui/app.py:/app/app.py:ro
+      - ./ui/index.html:/app/index.html:ro
+    command:
+      - python
+      - /app/app.py
+    networks:
+      - proxy
     security_opt:
       - no-new-privileges:true
 
