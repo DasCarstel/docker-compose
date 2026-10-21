@@ -13,6 +13,7 @@ Drei Wege hinein:
 
 import json
 import os
+import re
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -45,6 +46,33 @@ def build_multipart(audio, language=""):
     chunks.append(audio)
     chunks.append(("\r\n--%s--\r\n" % BOUNDARY).encode())
     return b"".join(chunks), "multipart/form-data; boundary=" + BOUNDARY
+
+
+def force_language(body, ctype, lang):
+    """Setzt das language-Feld im multipart-Body, notfalls neu ein.
+
+    Ohne feste Sprache rät Qwen3-ASR und liefert bei kurzem Audio schon mal
+    Chinesisch. Vorgabe fuer den /text-Endpunkt ist deshalb 'de'.
+    """
+    if not lang or lang == "auto":
+        return body, ctype
+    match = re.search(r'boundary=("?)([^";]+)', ctype)
+    if not match:
+        return body, ctype
+    boundary = match.group(2).encode()
+    value = lang.encode()
+
+    if b'name="language"' in body:
+        body = re.sub(rb'(name="language"\r\n\r\n)[^\r\n]*', rb"\1" + value, body, count=1)
+        return body, ctype
+
+    closing = b"--" + boundary + b"--"
+    idx = body.rfind(closing)
+    if idx == -1:
+        return body, ctype
+    part = (b"--" + boundary + b"\r\nContent-Disposition: form-data; name=\"language\"\r\n\r\n"
+            + value + b"\r\n")
+    return body[:idx] + part + body[idx:], ctype
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -110,11 +138,17 @@ class Handler(BaseHTTPRequestHandler):
         if audio is None:
             return
 
+        language = "de"
+        if "lang=" in self.path:
+            language = self.path.split("lang=", 1)[1].split("&", 1)[0][:5]
+            if language not in ("de", "en", "auto"):
+                language = "de"
+
         ctype = self.headers.get("Content-Type") or ""
         if ctype.startswith("multipart/form-data"):
-            payload, out_type = audio, ctype       # App spricht schon OpenAI-Format
+            payload, out_type = force_language(audio, ctype, language)   # App = OpenAI-Format
         else:
-            payload, out_type = build_multipart(audio)
+            payload, out_type = build_multipart(audio, language)
 
         try:
             with self._upstream(payload, out_type) as resp:
