@@ -13,6 +13,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /run/dbus:/run/dbus:ro
       - /var/run/docker.sock:/var/run/docker.sock # https://github.com/ualex73/monitor_docker?tab=readme-ov-file
+      - /etc/docker/homeassistant/patches/vad.py:/usr/src/homeassistant/homeassistant/components/assist_pipeline/vad.py:ro
+      - /etc/docker/homeassistant/patches/models.py:/usr/src/homeassistant/homeassistant/components/assist_pipeline/models.py:ro
     environment:
       - TZ=Europe/Berlin
     # privileged: true  # Ersetzt durch spezifische Capabilities (Security Hardening)
