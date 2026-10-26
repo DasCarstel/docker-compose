@@ -14,6 +14,7 @@ Hier liegen Services/Konfigurationen, die **nicht mehr benutzt** werden.
 - `excalidraw/` — Whiteboard/Zeichnen. Ersatz: `excalidash/`.
 - `koreader-sync/` — Lese-Fortschritt-Sync für KOReader. Ersatz: `bookbridge/` (jetzt im audiobookshelf-Stack).
 - `n8n/` — Workflow-Automatisierung.
+- `nextcloud/` — Filesync/Kollaboration. Ersatz: `opencloud/`.
 - `obsidian-livesync/` — Obsidian-Sync via CouchDB.
 - `photoprism-archiv/` — Foto-Verwaltung (Archiv). Ersatz: `immich-fam/`.
 - `photoprism-private/` — Foto-Verwaltung (Privat). Ersatz: `immich/`.
