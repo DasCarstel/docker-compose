@@ -47,6 +47,23 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  jellyfin-ts:
+    image: tailscale/tailscale:latest
+    container_name: jellyfin-ts
+    restart: unless-stopped
+    network_mode: "service:jellyfin"
+    depends_on:
+      - jellyfin
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY_JELLYFIN}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=true
+      - TS_HOSTNAME=jellyfin
+      - TS_SERVE_CONFIG=/config/serve.json
+    volumes:
+      - /etc/docker/jellyfin-ts:/var/lib/tailscale
+      - /etc/docker/jellyfin-ts-serve:/config
+
 networks:
   proxy:
     external: true
