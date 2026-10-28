@@ -29,6 +29,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(HERE, "index.html"), "rb") as fh:
     INDEX = fh.read()
 
+# Favicon: Wellenform auf Akzentblau, als SVG (skaliert in jeder Groesse).
+FAVICON = (
+    b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Sprache zu Text">'
+    b'<rect width="64" height="64" rx="14" fill="#2f6fed"/>'
+    b'<g fill="#fff">'
+    b'<rect x="13" y="26" width="5" height="12" rx="2.5"/>'
+    b'<rect x="22" y="18" width="5" height="28" rx="2.5"/>'
+    b'<rect x="31" y="10" width="5" height="44" rx="2.5"/>'
+    b'<rect x="40" y="18" width="5" height="28" rx="2.5"/>'
+    b'<rect x="49" y="26" width="5" height="12" rx="2.5"/>'
+    b'</g></svg>'
+)
+
 
 def build_multipart(audio, language=""):
     """Baut den Request-Body fuer /v1/audio/transcriptions."""
@@ -118,6 +131,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, INDEX, "text/html; charset=utf-8")
         elif path == "/healthz":
             self._send(200, b'{"ok":true}')
+        elif path in ("/favicon.svg", "/favicon.ico", "/icon.svg"):
+            self._send(200, FAVICON, "image/svg+xml")
         else:
             self._send(404, b'{"error":"not found"}')
 
