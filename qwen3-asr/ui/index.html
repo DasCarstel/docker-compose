@@ -44,8 +44,40 @@
   textarea { width:100%; min-height:180px; resize:vertical; font:inherit; padding:12px;
       border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text); }
   .status { color:var(--muted); font-size:.85rem; min-height:1.4em; margin-top:10px; }
-  .drop { border:2px dashed var(--line); border-radius:12px; padding:22px; text-align:center; color:var(--muted); }
-  .drop.hot { border-color:var(--accent); color:var(--accent); }
+  .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .toolbar .ico, .actions-bar .ico { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  button.rec { display:inline-flex; align-items:center; gap:9px; padding:11px 18px; border-radius:11px; font-weight:600; }
+  button.rec:hover:not(:disabled) { border-color:#d9534f; }
+  button.rec .ico-stop { display:none; }
+  button.rec.on .ico-mic { display:none; }
+  button.rec.on .ico-stop { display:inline-block; }
+  button.rec.on .dot { background:#fff; animation:blink 1.1s ease-in-out infinite; }
+  @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:.25 } }
+  label.btn { display:inline-flex; align-items:center; gap:8px; }
+  .lang { display:flex; align-items:center; gap:8px; margin-left:auto; }
+  .lang label { font-size:.82rem; color:var(--muted); }
+  .actions-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+                 margin-top:14px; padding-top:14px; border-top:1px solid var(--line); }
+  .actions-bar .grow { flex:1 1 auto; }
+  button.primary:hover:not(:disabled) { border-color:var(--accent); filter:brightness(1.07); }
+  button.primary.copy.ok { background:var(--ok); border-color:var(--ok); color:#fff; }
+  button.ghost.danger:hover:not(:disabled) { border-color:#d9534f; color:#d9534f; }
+  .overlay { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+             background:rgba(16,24,40,.42); backdrop-filter:blur(3px); pointer-events:none; animation:fadein .12s ease both; }
+  .overlay[hidden] { display:none; }
+  .overlay .panel { background:var(--card); border:2px dashed var(--accent); border-radius:18px; padding:36px 42px;
+                    text-align:center; box-shadow:0 24px 60px -20px rgba(0,0,0,.5); }
+  .overlay .panel svg { width:38px; height:38px; fill:none; stroke:var(--accent); stroke-width:1.6;
+                        stroke-linecap:round; stroke-linejoin:round; margin-bottom:10px; }
+  .overlay .panel strong { display:block; font-size:1.05rem; }
+  .overlay .panel span { color:var(--muted); font-size:.88rem; }
+  @keyframes fadein { from { opacity:0 } to { opacity:1 } }
+  @media (max-width:560px) {
+    button.rec, label.btn { flex:1 1 auto; justify-content:center; }
+    .lang { margin-left:0; width:100%; }
+    .lang select { flex:1; }
+  }
   .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#d9534f; margin-right:7px; vertical-align:1px; }
   .dot.hidden { display:none; }
   h2 { font-size:1rem; margin:0; }
@@ -71,38 +103,53 @@
 <body>
 <main>
   <h1>Sprache zu Text</h1>
-  <p class="sub">Qwen3-ASR auf <code>stt.mueller-nas.de</code> &middot; kurze Diktate und Dateien bis 100 MB</p>
+  <p class="sub">Qwen3-ASR auf <code>stt.mueller-nas.de</code> &middot; Diktat oder Audiodatei &ndash; Datei einfach auf die Seite ziehen</p>
 
-  <div class="card">
-    <div class="row">
-      <button id="rec" class="rec"><span class="dot hidden" id="dot"></span><span id="reclabel">Aufnahme starten</span></button>
-      <label class="btn" for="file">Datei w&auml;hlen</label>
+  <section class="card">
+    <div class="toolbar">
+      <button id="rec" class="rec" type="button">
+        <span class="dot hidden" id="dot"></span>
+        <svg class="ico ico-mic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+        <svg class="ico ico-stop" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+        <span id="reclabel">Aufnahme starten</span>
+      </button>
+      <label class="btn" for="file">
+        <svg class="ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+        <span>Datei w&auml;hlen</span>
+      </label>
       <input id="file" type="file" accept="audio/*,video/*" hidden>
-      <select id="lang" title="Sprache">
-        <option value="">Automatisch</option>
-        <option value="de">Deutsch</option>
-        <option value="en">Englisch</option>
-      </select>
+      <div class="lang">
+        <label for="lang">Sprache</label>
+        <select id="lang" title="Sprache">
+          <option value="">Automatisch</option>
+          <option value="de">Deutsch</option>
+          <option value="en">Englisch</option>
+        </select>
+      </div>
     </div>
     <div class="status" id="status" aria-live="polite">Bereit.</div>
-  </div>
+  </section>
 
-  <div class="card">
-    <div class="drop" id="drop">Audiodatei hier hineinziehen</div>
-  </div>
-
-  <div class="card">
+  <section class="card">
+    <div class="card-head"><h2>Transkript</h2></div>
     <textarea id="out" placeholder="Transkript erscheint hier &hellip;" spellcheck="false"></textarea>
-    <div class="row" style="margin-top:12px">
-      <button id="copy" class="copy" type="button">
+    <div class="actions-bar">
+      <button id="copy" class="copy primary" type="button">
         <svg class="ico ico-copy" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
         <svg class="ico ico-check" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>
         <span id="copylabel">Kopieren</span>
       </button>
-      <button id="save">Als .txt speichern</button>
-      <button id="clear">Leeren</button>
+      <button id="save" type="button">
+        <svg class="ico" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 4v12"/><path d="M7 11l5 5 5-5"/><path d="M4 20h16"/></svg>
+        <span>Als .txt speichern</span>
+      </button>
+      <span class="grow"></span>
+      <button id="clear" class="ghost danger" type="button">
+        <svg class="ico" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5h6v2"/><path d="M6 7l1 13h10l1-13"/></svg>
+        <span>Leeren</span>
+      </button>
     </div>
-  </div>
+  </section>
 
   <section class="card">
     <div class="hist-head">
@@ -112,6 +159,14 @@
     <p class="empty" id="histempty">Noch keine Transkripte.</p>
     <ul id="histlist"></ul>
   </section>
+
+  <div class="overlay" id="overlay" hidden>
+    <div class="panel">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      <strong>Audiodatei ablegen</strong>
+      <span>wird sofort transkribiert &middot; max. 100 MB</span>
+    </div>
+  </div>
 
   <footer>L&auml;uft lokal auf dem NAS &middot; kein Cloud-Dienst &middot; Anmeldung &uuml;ber Authentik</footer>
 </main>
@@ -277,18 +332,51 @@ $("rec").onclick = async () => {
   }, 250);
 };
 
-/* ---- Datei / Drag & Drop ---- */
+/* ---- Datei ---- */
 $("file").onchange = (e) => { if (e.target.files[0]) send(e.target.files[0]); };
-const drop = $("drop");
-["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => {
-  e.preventDefault(); drop.classList.add("hot");
-}));
-["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => {
-  e.preventDefault(); drop.classList.remove("hot");
-}));
-drop.addEventListener("drop", (e) => {
-  const f = e.dataTransfer.files[0];
-  if (f) send(f);
+
+/* ---- Datei per Drag & Drop irgendwo auf der Seite ---- */
+const overlay = $("overlay");
+let dragDepth = 0;
+const MAX_FILE = 100 * 1024 * 1024;
+
+function hasFiles(e) {
+  const t = e.dataTransfer && e.dataTransfer.types;
+  return !!t && Array.prototype.indexOf.call(t, "Files") !== -1;
+}
+
+window.addEventListener("dragenter", (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  dragDepth++;
+  overlay.hidden = false;
+});
+
+window.addEventListener("dragover", (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+});
+
+window.addEventListener("dragleave", (e) => {
+  if (!hasFiles(e)) return;
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (dragDepth === 0) overlay.hidden = true;
+});
+
+window.addEventListener("drop", (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  dragDepth = 0;
+  overlay.hidden = true;
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if (!f) return;
+  if (f.size > MAX_FILE) { setStatus("Datei zu gro\u00df (max. 100 MB)."); return; }
+  send(f);
+});
+
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !overlay.hidden) { dragDepth = 0; overlay.hidden = true; }
 });
 
 /* ---- Ergebnis ---- */
