@@ -5,9 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sprache zu Text</title>
 <style>
-  :root { color-scheme: light dark; --accent:#2f6fed; --bg:#f6f7f9; --card:#fff; --text:#1b1f24; --muted:#68707c; --line:#dde1e6; }
+  :root { color-scheme: light dark; --accent:#2f6fed; --accent-soft:#eaf1ff; --bg:#f6f7f9; --card:#fff;
+          --text:#1b1f24; --muted:#68707c; --line:#dde1e6; --ok:#1f8a4c; --ok-soft:#e7f6ec;
+          --shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 28px -14px rgba(16,24,40,.22); }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#14171b; --card:#1c2026; --text:#e8ebef; --muted:#9aa3ae; --line:#2c323a; }
+    :root { --bg:#0f1216; --card:#171b21; --text:#e8ebef; --muted:#9aa3ae; --line:#262c34;
+            --accent-soft:#16233b; --ok:#3fbf72; --ok-soft:#14301f;
+            --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px -14px rgba(0,0,0,.65); }
   }
   * { box-sizing: border-box; }
   body { margin:0; padding:24px 16px 64px; background:var(--bg); color:var(--text);
@@ -15,10 +19,23 @@
   main { max-width:760px; margin:0 auto; }
   h1 { font-size:1.4rem; margin:0 0 4px; }
   p.sub { margin:0 0 24px; color:var(--muted); font-size:.9rem; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
   .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   button, label.btn { border:1px solid var(--line); background:var(--card); color:var(--text);
-      border-radius:8px; padding:9px 14px; font:inherit; cursor:pointer; }
+      border-radius:9px; padding:9px 14px; font:inherit; cursor:pointer;
+      transition: background .16s ease, border-color .16s ease, color .16s ease, transform .12s ease, box-shadow .16s ease; }
+  button:hover:not(:disabled):not(.rec), label.btn:hover { border-color:var(--accent); }
+  button:active:not(:disabled), label.btn:active { transform: scale(.97); }
+  button:focus-visible, select:focus-visible, textarea:focus-visible, .item .txt:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  button.ghost { background:transparent; border-color:transparent; color:var(--muted); padding:6px 10px; font-size:.85rem; }
+  button.ghost:hover { color:var(--text); border-color:var(--line); }
+  button.copy { min-width:134px; display:inline-flex; align-items:center; justify-content:center; gap:7px; }
+  button.copy .ico { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  button.copy .ico-check { display:none; }
+  button.copy.ok { background:var(--ok-soft); border-color:var(--ok); color:var(--ok); }
+  button.copy.ok .ico-copy { display:none; }
+  button.copy.ok .ico-check { display:inline-block; animation: pop .34s cubic-bezier(.2,1.4,.4,1); }
+  @keyframes pop { 0% { transform: scale(.55); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
   button.primary { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
   button.rec { border-color:#d9534f; color:#d9534f; font-weight:600; }
   button.rec.on { background:#d9534f; color:#fff; }
@@ -31,6 +48,22 @@
   .drop.hot { border-color:var(--accent); color:var(--accent); }
   .dot { display:inline-block; width:9px; height:9px; border-radius:50%; background:#d9534f; margin-right:7px; vertical-align:1px; }
   .dot.hidden { display:none; }
+  h2 { font-size:1rem; margin:0; }
+  .hist-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+  #histlist { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .item { border:1px solid var(--line); border-radius:10px; padding:12px; background:var(--bg); animation: slidein .26s ease both; }
+  @keyframes slidein { from { opacity:0; transform: translateY(-4px); } to { opacity:1; transform:none; } }
+  .item.new { animation: slidein .26s ease both, flash 1.5s ease both; }
+  @keyframes flash { 0% { border-color:var(--ok); box-shadow:0 0 0 3px var(--ok-soft); }
+                     100% { border-color:var(--line); box-shadow:none; } }
+  .item .meta { display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:.75rem; color:var(--muted); margin-bottom:8px; }
+  .tag { border:1px solid var(--line); border-radius:999px; padding:1px 8px; }
+  .item .txt { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font-size:.92rem; cursor:pointer;
+               display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .item.open .txt { display:block; -webkit-line-clamp:unset; }
+  .item .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .item .actions button { padding:5px 10px; font-size:.82rem; }
+  .empty { color:var(--muted); font-size:.88rem; margin:0; }
   a { color:var(--accent); }
   footer { color:var(--muted); font-size:.8rem; text-align:center; margin-top:24px; }
 </style>
@@ -51,7 +84,7 @@
         <option value="en">Englisch</option>
       </select>
     </div>
-    <div class="status" id="status">Bereit.</div>
+    <div class="status" id="status" aria-live="polite">Bereit.</div>
   </div>
 
   <div class="card">
@@ -61,11 +94,24 @@
   <div class="card">
     <textarea id="out" placeholder="Transkript erscheint hier &hellip;" spellcheck="false"></textarea>
     <div class="row" style="margin-top:12px">
-      <button id="copy">Kopieren</button>
+      <button id="copy" class="copy" type="button">
+        <svg class="ico ico-copy" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+        <svg class="ico ico-check" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>
+        <span id="copylabel">Kopieren</span>
+      </button>
       <button id="save">Als .txt speichern</button>
       <button id="clear">Leeren</button>
     </div>
   </div>
+
+  <section class="card">
+    <div class="hist-head">
+      <h2>Verlauf</h2>
+      <button id="histclear" class="ghost" type="button">Verlauf l&ouml;schen</button>
+    </div>
+    <p class="empty" id="histempty">Noch keine Transkripte.</p>
+    <ul id="histlist"></ul>
+  </section>
 
   <footer>L&auml;uft lokal auf dem NAS &middot; kein Cloud-Dienst &middot; Anmeldung &uuml;ber Authentik</footer>
 </main>
@@ -74,6 +120,7 @@
 const $ = (id) => document.getElementById(id);
 const statusEl = $("status"), out = $("out");
 let recorder = null, chunks = [], started = 0, timer = null;
+const HIST_KEY = "stt.history.v1", HIST_MAX = 50;
 
 function setStatus(text, busy) {
   statusEl.textContent = text;
@@ -160,6 +207,15 @@ async function send(blob) {
     out.scrollIntoView({block:"center", behavior:"smooth"});
     const ms = Math.round(performance.now() - t0);
     setStatus(out.value ? "Fertig in " + ms + " ms (" + secs + " s Audio)." : "Keine Sprache erkannt.");
+    if (out.value) {
+      addHist({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        ts: Date.now(),
+        text: out.value,
+        lang: lang || "auto",
+        secs: Number(secs)
+      });
+    }
   } catch (err) {
     setStatus("Netzwerkfehler: " + err.message);
   }
@@ -236,11 +292,6 @@ drop.addEventListener("drop", (e) => {
 });
 
 /* ---- Ergebnis ---- */
-$("copy").onclick = async () => {
-  if (!out.value) return;
-  try { await navigator.clipboard.writeText(out.value); setStatus("In die Zwischenablage kopiert."); }
-  catch { out.select(); document.execCommand("copy"); setStatus("Kopiert."); }
-};
 $("save").onclick = () => {
   if (!out.value) return;
   const a = document.createElement("a");
@@ -250,6 +301,125 @@ $("save").onclick = () => {
   URL.revokeObjectURL(a.href);
 };
 $("clear").onclick = () => { out.value = ""; setStatus("Bereit."); };
+
+/* ---- Zwischenablage mit Feedback ---- */
+function flashCopy(btn) {
+  if (!btn) return;
+  const label = btn.querySelector("span");
+  if (!btn.classList.contains("ok") && label) btn.dataset.prev = label.textContent;
+  btn.classList.add("ok");
+  if (label) label.textContent = "Kopiert";
+  clearTimeout(btn._t);
+  btn._t = setTimeout(() => {
+    btn.classList.remove("ok");
+    if (label) label.textContent = btn.dataset.prev || "Kopieren";
+  }, 1600);
+}
+
+async function copyText(text, btn) {
+  if (!text) return;
+  let ok = true;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    ta.remove();
+  }
+  if (ok) flashCopy(btn); else setStatus("Kopieren nicht erlaubt \u2013 Text bitte manuell markieren.");
+}
+
+/* ---- Verlauf (localStorage, neueste zuerst) ---- */
+function loadHist() {
+  try { const v = JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); return Array.isArray(v) ? v : []; }
+  catch (e) { return []; }
+}
+function saveHist(list) {
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, HIST_MAX))); } catch (e) { /* voll/privat */ }
+}
+function fmtTs(ts) {
+  return new Date(ts).toLocaleString("de-DE", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" });
+}
+function addHist(entry) {
+  const list = loadHist();
+  list.unshift(entry);
+  saveHist(list);
+  renderHist(entry.id);
+}
+function mkBtn(text, cls) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.textContent = text;
+  if (cls) b.className = cls;
+  return b;
+}
+function renderHist(highlightId) {
+  const list = loadHist();
+  const ul = $("histlist");
+  ul.textContent = "";
+  $("histempty").hidden = list.length > 0;
+  $("histclear").hidden = list.length === 0;
+  list.forEach((e) => {
+    const li = document.createElement("li");
+    li.className = "item" + (e.id === highlightId ? " new" : "");
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    const t = document.createElement("time");
+    t.textContent = fmtTs(e.ts);
+    meta.appendChild(t);
+    const tl = document.createElement("span");
+    tl.className = "tag";
+    tl.textContent = e.lang && e.lang !== "auto" ? e.lang : "auto";
+    meta.appendChild(tl);
+    if (e.secs) {
+      const ts = document.createElement("span");
+      ts.className = "tag";
+      ts.textContent = String(e.secs).replace(".", ",") + " s Audio";
+      meta.appendChild(ts);
+    }
+
+    const p = document.createElement("p");
+    p.className = "txt";
+    p.textContent = e.text;
+    p.title = "Klicken zum Auf-/Zuklappen";
+    p.onclick = () => li.classList.toggle("open");
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    const bCopy = mkBtn("Kopieren", "copy");
+    const bCopyLabel = document.createElement("span");
+    bCopyLabel.textContent = "Kopieren";
+    bCopy.textContent = "";
+    bCopy.appendChild(bCopyLabel);
+    bCopy.onclick = () => copyText(e.text, bCopy);
+    const bUse = mkBtn("Ins Feld");
+    bUse.onclick = () => {
+      out.value = e.text;
+      setStatus("Aus dem Verlauf übernommen.");
+      out.scrollIntoView({ block:"center", behavior:"smooth" });
+    };
+    const bDel = mkBtn("L\u00f6schen", "ghost");
+    bDel.onclick = () => { saveHist(loadHist().filter((x) => x.id !== e.id)); renderHist(); };
+    actions.append(bCopy, bUse, bDel);
+
+    li.append(meta, p, actions);
+    ul.appendChild(li);
+  });
+}
+
+$("copy").onclick = () => copyText(out.value, $("copy"));
+$("histclear").onclick = () => {
+  if (!loadHist().length) return;
+  if (!confirm("Verlauf wirklich l\u00f6schen?")) return;
+  saveHist([]);
+  renderHist();
+  setStatus("Verlauf gel\u00f6scht.");
+};
+renderHist();
 </script>
 </body>
 </html>
