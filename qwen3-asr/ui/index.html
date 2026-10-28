@@ -49,6 +49,9 @@
   textarea { width:100%; min-height:180px; resize:vertical; font:inherit; padding:12px;
       border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--text); }
   .status { color:var(--muted); font-size:.85rem; min-height:1.4em; margin-top:10px; }
+  #meter { display:block; width:100%; height:44px; margin-top:14px; border-radius:10px;
+           background:var(--bg); border:1px solid var(--line); }
+  #meter[hidden] { display:none; }
   .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
   .toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .toolbar .ico, .actions-bar .ico { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
@@ -132,6 +135,7 @@
         </select>
       </div>
     </div>
+    <canvas id="meter" height="44" hidden aria-hidden="true"></canvas>
     <div class="status" id="status" aria-live="polite">Bereit.</div>
   </section>
 
@@ -281,6 +285,93 @@ async function send(blob) {
   }
 }
 
+/* ---- Pegelanzeige (nur waehrend der Aufnahme) ---- */
+const meter = $("meter");
+const meterCtx2d = meter ? meter.getContext("2d") : null;
+let meterAC = null, meterRAF = 0, meterSize = { w: 0, h: 0 };
+const METER_BARS = 34;
+const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function meterResize() {
+  if (!meter || !meterCtx2d) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = meter.clientWidth || 300;
+  const h = meter.clientHeight || 44;
+  meter.width = Math.round(w * dpr);
+  meter.height = Math.round(h * dpr);
+  meterCtx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+  meterSize = { w: w, h: h };
+}
+
+function stopMeter() {
+  if (meterRAF) cancelAnimationFrame(meterRAF);
+  meterRAF = 0;
+  if (meterAC) { try { meterAC.close(); } catch (e) { /* egal */ } meterAC = null; }
+  if (meterCtx2d && meter) meterCtx2d.clearRect(0, 0, meter.width, meter.height);
+}
+
+function startMeter(stream) {
+  if (!meter || !meterCtx2d || !stream) return;
+  stopMeter();
+  meter.hidden = false;
+  meterResize();
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  try {
+    meterAC = new AC();
+    if (meterAC.state === "suspended") meterAC.resume();
+    const src = meterAC.createMediaStreamSource(stream);
+    const an = meterAC.createAnalyser();
+    an.fftSize = 1024;
+    an.smoothingTimeConstant = 0.75;
+    src.connect(an);          // bewusst NICHT an destination -> kein Echo/Feedback
+    const bins = new Uint8Array(an.frequencyBinCount);
+    const levels = new Float32Array(METER_BARS);
+    const edges = [];
+    for (let i = 0; i <= METER_BARS; i++) {
+      edges.push(Math.floor(Math.pow(i / METER_BARS, 1.9) * bins.length));
+    }
+    const color = (getComputedStyle(document.documentElement).getPropertyValue("--accent") || "").trim() || "#2f6fed";
+    let frame = 0;
+
+    const draw = () => {
+      meterRAF = requestAnimationFrame(draw);
+      frame++;
+      if (reduceMotion && frame % 3 !== 0) return;
+      an.getByteFrequencyData(bins);
+      const w = meterSize.w, h = meterSize.h;
+      meterCtx2d.clearRect(0, 0, w, h);
+      const gap = 3;
+      const bw = Math.max(2, (w - gap * (METER_BARS - 1)) / METER_BARS);
+      for (let i = 0; i < METER_BARS; i++) {
+        const from = edges[i];
+        const to = Math.max(from + 1, edges[i + 1]);
+        let sum = 0, n = 0;
+        for (let b = from; b < to && b < bins.length; b++) { sum += bins[b]; n++; }
+        let v = n ? (sum / n) / 255 : 0;
+        v = Math.min(1, Math.pow(v, 0.75) * 1.15);
+        levels[i] += (v - levels[i]) * (v > levels[i] ? 0.55 : 0.14);   // schnell hoch, langsam abklingen
+        const bh = Math.max(2, levels[i] * h);
+        const x = i * (bw + gap);
+        const y = (h - bh) / 2;                                          // symmetrisch um die Mitte
+        meterCtx2d.globalAlpha = 0.3 + 0.7 * levels[i];
+        meterCtx2d.fillStyle = color;
+        meterCtx2d.beginPath();
+        if (meterCtx2d.roundRect) meterCtx2d.roundRect(x, y, bw, bh, bw / 2);
+        else meterCtx2d.rect(x, y, bw, bh);
+        meterCtx2d.fill();
+      }
+      meterCtx2d.globalAlpha = 1;
+    };
+    draw();
+  } catch (e) {
+    stopMeter();
+    meter.hidden = true;
+  }
+}
+
+window.addEventListener("resize", () => { if (meterRAF) meterResize(); });
+
 /* ---- Aufnahme ---- */
 $("rec").onclick = async () => {
   if (recorder && recorder.state === "recording") {
@@ -304,6 +395,7 @@ $("rec").onclick = async () => {
   recorder.onstop = () => {
     const mime = (recorder && recorder.mimeType) || "audio/webm";
     try {
+      stopMeter(); meter.hidden = true;
       stream.getTracks().forEach((t) => t.stop());
       clearInterval(timer); timer = null;
       const dot = $("dot"); if (dot) dot.classList.add("hidden");
@@ -314,12 +406,14 @@ $("rec").onclick = async () => {
       recorder = null;
       if (blob.size) send(blob); else setStatus("Keine Aufnahme.");
     } catch (err) {
+      stopMeter(); meter.hidden = true;
       recorder = null;
       setRecLabel("Aufnahme starten");
       setStatus("Fehler beim Beenden der Aufnahme: " + err.message);
     }
   };
   recorder.onerror = (e) => {
+    stopMeter(); meter.hidden = true;
     recorder = null;
     clearInterval(timer); timer = null;
     const dot = $("dot"); if (dot) dot.classList.add("hidden");
@@ -328,6 +422,7 @@ $("rec").onclick = async () => {
     setStatus("Aufnahmefehler: " + ((e.error && e.error.name) || "unbekannt"));
   };
   recorder.start();
+  startMeter(stream);
   started = Date.now();
   const dot = $("dot"); if (dot) dot.classList.remove("hidden");
   $("rec").classList.add("on");
