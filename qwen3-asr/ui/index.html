@@ -42,7 +42,7 @@
 
   <div class="card">
     <div class="row">
-      <button id="rec" class="rec"><span class="dot hidden" id="dot"></span>Aufnahme starten</button>
+      <button id="rec" class="rec"><span class="dot hidden" id="dot"></span><span id="reclabel">Aufnahme starten</span></button>
       <label class="btn" for="file">Datei w&auml;hlen</label>
       <input id="file" type="file" accept="audio/*,video/*" hidden>
       <select id="lang" title="Sprache">
@@ -79,6 +79,11 @@ function setStatus(text, busy) {
   statusEl.textContent = text;
   $("rec").disabled = !!busy;
   $("file").disabled = !!busy;
+}
+
+function setRecLabel(text) {
+  const el = $("reclabel");
+  if (el) el.textContent = text; else $("rec").textContent = text;
 }
 
 /* ---- Audio -> 16 kHz Mono WAV ---- */
@@ -131,7 +136,7 @@ async function send(blob) {
     return;
   }
   const secs = (wav.size / 32000).toFixed(1);
-  setStatus("Transkribiere " + secs + " s Audio \u2026");
+  setStatus("Transkribiere " + secs + " s Audio \u2026", true);
   const lang = $("lang").value;
   const url = "/api/transcribe" + (lang ? "?lang=" + lang : "");
   try {
@@ -140,12 +145,19 @@ async function send(blob) {
       headers: { "Content-Type": "audio/wav" },
       body: wav
     });
-    const data = await resp.json().catch(() => ({}));
+    const ctype = resp.headers.get("content-type") || "";
+    const isJson = ctype.indexOf("json") !== -1;
+    const data = isJson ? await resp.json().catch(() => ({})) : {};
     if (!resp.ok) {
       setStatus("Fehler " + resp.status + ": " + (data.error || data.detail || "unbekannt"));
       return;
     }
+    if (!isJson) {
+      setStatus("Antwort war kein JSON (evtl. Anmeldung abgelaufen) \u2013 Seite neu laden.");
+      return;
+    }
     out.value = (data.text || "").trim();
+    out.scrollIntoView({block:"center", behavior:"smooth"});
     const ms = Math.round(performance.now() - t0);
     setStatus(out.value ? "Fertig in " + ms + " ms (" + secs + " s Audio)." : "Keine Sprache erkannt.");
   } catch (err) {
@@ -174,20 +186,36 @@ $("rec").onclick = async () => {
   recorder = new MediaRecorder(stream);
   recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
   recorder.onstop = () => {
-    stream.getTracks().forEach((t) => t.stop());
-    clearInterval(timer);
-    $("dot").classList.add("hidden");
-    $("rec").classList.remove("on");
-    $("rec").textContent = "Aufnahme starten";
-    const blob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+    const mime = (recorder && recorder.mimeType) || "audio/webm";
+    try {
+      stream.getTracks().forEach((t) => t.stop());
+      clearInterval(timer); timer = null;
+      const dot = $("dot"); if (dot) dot.classList.add("hidden");
+      $("rec").classList.remove("on");
+      setRecLabel("Aufnahme starten");
+      const blob = new Blob(chunks, { type: mime });
+      chunks = [];
+      recorder = null;
+      if (blob.size) send(blob); else setStatus("Keine Aufnahme.");
+    } catch (err) {
+      recorder = null;
+      setRecLabel("Aufnahme starten");
+      setStatus("Fehler beim Beenden der Aufnahme: " + err.message);
+    }
+  };
+  recorder.onerror = (e) => {
     recorder = null;
-    if (blob.size) send(blob); else setStatus("Keine Aufnahme.");
+    clearInterval(timer); timer = null;
+    const dot = $("dot"); if (dot) dot.classList.add("hidden");
+    $("rec").classList.remove("on");
+    setRecLabel("Aufnahme starten");
+    setStatus("Aufnahmefehler: " + ((e.error && e.error.name) || "unbekannt"));
   };
   recorder.start();
   started = Date.now();
-  $("dot").classList.remove("hidden");
+  const dot = $("dot"); if (dot) dot.classList.remove("hidden");
   $("rec").classList.add("on");
-  $("rec").textContent = "Aufnahme stoppen";
+  setRecLabel("Aufnahme stoppen");
   timer = setInterval(() => {
     setStatus("Aufnahme l\u00e4uft \u2026 " + ((Date.now() - started) / 1000).toFixed(0) + " s");
   }, 250);
