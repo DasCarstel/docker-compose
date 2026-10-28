@@ -12,10 +12,12 @@
 <style>
   :root { color-scheme: light dark; --accent:#2f6fed; --accent-soft:#eaf1ff; --bg:#f6f7f9; --card:#fff;
           --text:#1b1f24; --muted:#68707c; --line:#dde1e6; --ok:#1f8a4c; --ok-soft:#e7f6ec;
+          --warn:#b45309; --warn-soft:#fdf3e3;
           --shadow:0 1px 2px rgba(16,24,40,.04), 0 10px 28px -14px rgba(16,24,40,.22); }
   @media (prefers-color-scheme: dark) {
     :root { --bg:#0f1216; --card:#171b21; --text:#e8ebef; --muted:#9aa3ae; --line:#262c34;
             --accent-soft:#16233b; --ok:#3fbf72; --ok-soft:#14301f;
+            --warn:#f0a95c; --warn-soft:#33260f;
             --shadow:0 1px 2px rgba(0,0,0,.35), 0 10px 28px -14px rgba(0,0,0,.65); }
   }
   * { box-sizing: border-box; }
@@ -25,6 +27,11 @@
   h1 { font-size:1.4rem; margin:0 0 4px; }
   p.sub { margin:0 0 24px; color:var(--muted); font-size:.9rem; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .banner { display:flex; align-items:center; gap:12px; justify-content:space-between; flex-wrap:wrap;
+            background:var(--warn-soft); border:1px solid var(--warn); color:var(--warn);
+            border-radius:12px; padding:10px 14px; margin-bottom:16px; font-size:.9rem; }
+  .banner[hidden] { display:none; }
+  .banner button { border-color:var(--warn); background:var(--warn); color:#fff; font-weight:600; }
   .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   button, label.btn { border:1px solid var(--line); background:var(--card); color:var(--text);
       border-radius:9px; padding:9px 14px; font:inherit; cursor:pointer;
@@ -112,6 +119,11 @@
 <main>
   <h1>Sprache zu Text</h1>
   <p class="sub">Qwen3-ASR auf <code>stt.mueller-nas.de</code> &middot; Diktat oder Audiodatei &ndash; Datei einfach auf die Seite ziehen</p>
+
+  <div class="banner" id="banner" hidden role="status">
+    <span id="bannertext"></span>
+    <button id="reload" class="primary" type="button">Seite neu laden</button>
+  </div>
 
   <section class="card">
     <div class="toolbar">
@@ -268,6 +280,7 @@ async function send(blob) {
       return;
     }
     out.value = (data.text || "").trim();
+    hideBanner();
     out.scrollIntoView({block:"center", behavior:"smooth"});
     const ms = Math.round(performance.now() - t0);
     setStatus(out.value ? "Fertig in " + ms + " ms (" + secs + " s Audio)." : "Keine Sprache erkannt.");
@@ -281,7 +294,8 @@ async function send(blob) {
       });
     }
   } catch (err) {
-    setStatus("Netzwerkfehler: " + err.message);
+    setStatus("Verbindung fehlgeschlagen \u2013 vermutlich Netzwerk oder abgelaufene Sitzung. Bitte Seite neu laden.");
+    showBanner("Die Übertragung ist fehlgeschlagen. Nach einem Neuladen geht es in der Regel wieder.");
   }
 }
 
@@ -372,6 +386,73 @@ function startMeter(stream) {
 
 window.addEventListener("resize", () => { if (meterRAF) meterResize(); });
 
+/* ---- Verbindung & Mikrofon (robust gegen lange Standzeit) ---- */
+const banner = $("banner"), bannerText = $("bannertext");
+
+function showBanner(text) {
+  if (!banner) return;
+  bannerText.textContent = text;
+  banner.hidden = false;
+}
+function hideBanner() {
+  if (banner) banner.hidden = true;
+}
+if ($("reload")) $("reload").onclick = () => location.reload();
+
+/* Ist die Anmeldung (Authentik davor) noch gültig? */
+async function sessionOk() {
+  try {
+    const r = await fetch("/healthz", { cache: "no-store", redirect: "manual" });
+    return r.type !== "opaqueredirect" && r.status === 200;
+  } catch (e) {
+    return false;
+  }
+}
+
+function micErrorText(err) {
+  const name = (err && err.name) || "";
+  const msg = (err && err.message) || "unbekannt";
+  const known = {
+    NotAllowedError: "Mikrofonzugriff verweigert \u2013 bitte im Browser (Schloss-Symbol in der Adressleiste) erlauben.",
+    PermissionDeniedError: "Mikrofonzugriff verweigert \u2013 bitte im Browser erlauben.",
+    NotFoundError: "Kein Mikrofon gefunden.",
+    DevicesNotFoundError: "Kein Mikrofon gefunden.",
+    NotReadableError: "Mikrofon ist belegt oder der Audiotreiber reagiert nicht.",
+    TrackStartError: "Mikrofon ist belegt.",
+    OverconstrainedError: "Mikrofon erf\u00fcllt die Anforderungen nicht.",
+    SecurityError: "Die Seite muss \u00fcber HTTPS laufen.",
+    AbortError: "Aufnahme abgebrochen.",
+    NetworkError: "Verbindung zum Audiosystem unterbrochen."
+  };
+  return (known[name] ? known[name] + " " : "") + "(" + (name || "Fehler") + ": " + msg + ")";
+}
+
+/* Mikrofon holen, bei transienten Fehlern erneut versuchen */
+async function getMic(attempts) {
+  const max = attempts || 3;
+  const transient = ["NotReadableError", "TrackStartError", "AbortError", "NetworkError", "OverconstrainedError"];
+  let last = null;
+  for (let i = 0; i < max; i++) {
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
+    } catch (err) {
+      last = err;
+      const retryable = transient.indexOf(err && err.name) !== -1;
+      if (!retryable || i === max - 1) break;
+      setStatus("Mikrofon startet nicht (" + ((err && err.name) || "Fehler") + ") \u2013 versuche erneut \u2026", true);
+      try { await navigator.mediaDevices.enumerateDevices(); } catch (e) { /* egal */ }
+      await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+    }
+  }
+  throw last;
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && !recorder) hideBanner();
+});
+
 /* ---- Aufnahme ---- */
 $("rec").onclick = async () => {
   if (recorder && recorder.state === "recording") {
@@ -379,14 +460,26 @@ $("rec").onclick = async () => {
     return;
   }
   if (!navigator.mediaDevices || !window.MediaRecorder) {
-    setStatus("Dieser Browser kann nicht aufnehmen - bitte Datei w\u00e4hlen.");
+    setStatus("Dieser Browser kann nicht aufnehmen \u2013 bitte eine Datei w\u00e4hlen.");
     return;
   }
+  setStatus("Mikrofon wird gestartet \u2026", true);
+  hideBanner();
+
+  if (!(await sessionOk())) {
+    setStatus("Sitzung abgelaufen \u2013 bitte die Seite neu laden.");
+    showBanner("Deine Anmeldung ist abgelaufen. Nach dem Neuladen funktioniert die Aufnahme wieder.");
+    return;
+  }
+
   let stream;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    stream = await getMic(3);
   } catch (err) {
-    setStatus("Mikrofon verweigert: " + err.message);
+    setStatus("Mikrofon: " + micErrorText(err));
+    if (err && (err.name === "NotReadableError" || err.name === "TrackStartError" || err.name === "NetworkError")) {
+      showBanner("Das Mikrofon liefert kein Audiosignal. Meist hilft ein Neuladen der Seite.");
+    }
     return;
   }
   chunks = [];
