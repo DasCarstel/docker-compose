@@ -31,7 +31,7 @@ services:
       - --served-model-name
       - qwen3-asr
       - --gpu-memory-utilization
-      - "0.38"
+      - "0.30"
       - --enforce-eager
       - --max-model-len
       - "4096"
@@ -39,6 +39,11 @@ services:
       - 0.0.0.0
       - --port
       - "8000"
+      # PRO-337 (29.10.26): CORS-Allowlist. vLLM >=0.32 hat allowed_origins per
+      # Default LEER -> Browser-Origins (Obsidian app://obsidian.md) werden mit
+      # 400 "Disallowed CORS origin" abgewiesen. Liste wird per json.loads geparst.
+      - --allowed-origins
+      - '["app://obsidian.md","capacitor://localhost","http://localhost","https://obsidian.md"]'
     networks:
       - proxy
       - voice-net
