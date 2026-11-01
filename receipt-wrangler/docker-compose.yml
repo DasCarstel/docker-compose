@@ -1,0 +1,90 @@
+# Receipt Wrangler - selbstgehostete Kassenbon-Verwaltung
+# Domain:  https://bons.mueller-nas.de  (Traefik + Authentik Forward-Auth)
+# AI:      Ollama gemma4:12b via Vision (kein OCR-Engine-Einsatz)
+# Doku:    https://receiptwrangler.io/docs
+
+services:
+  wrangler:
+    image: noah231515/receipt-wrangler:latest
+    container_name: receipt-wrangler
+    entrypoint: ./entrypoint.sh
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - /etc/docker/receipt-wrangler/data:/app/receipt-wrangler-api/data
+      - /etc/docker/receipt-wrangler/logs:/app/receipt-wrangler-api/logs
+    environment:
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      SECRET_KEY: ${SECRET_KEY}
+      DB_ENGINE: postgresql
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: wrangler
+      DB_USER: wrangler
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bons.entrypoints=http"
+      - "traefik.http.routers.bons.rule=Host(`bons.mueller-nas.de`)"
+      - "traefik.http.middlewares.bons-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.bons.middlewares=bons-https-redirect"
+      - "traefik.http.routers.bons-secure.entrypoints=https"
+      - "traefik.http.routers.bons-secure.rule=Host(`bons.mueller-nas.de`)"
+      - "traefik.http.routers.bons-secure.tls=true"
+      - "traefik.http.routers.bons-secure.middlewares=authentik@docker"
+      - "traefik.http.routers.bons-secure.service=bons"
+      - "traefik.http.services.bons.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+    networks:
+      - proxy
+      - internal
+      - ollama
+    security_opt:
+      - no-new-privileges:true
+
+  db:
+    image: postgres:16
+    container_name: receipt-wrangler-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wrangler
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: wrangler
+    volumes:
+      - /etc/docker/postgres/receipt-wrangler:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wrangler -d wrangler"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:alpine
+    container_name: receipt-wrangler-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  proxy:
+    external: true
+  ollama:
+    external: true
+  internal:
