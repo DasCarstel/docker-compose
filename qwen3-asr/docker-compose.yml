@@ -30,8 +30,9 @@ services:
       - Qwen/Qwen3-ASR-0.6B
       - --served-model-name
       - qwen3-asr
+      # 0.18 statt 0.30: 2,2 statt 3,7 GiB belegt - Platz fuer Jellyfin/NVENC (0.6B-Modell braucht ~1,2 GiB)
       - --gpu-memory-utilization
-      - "0.30"
+      - "0.18"
       - --enforce-eager
       - --max-model-len
       - "4096"

@@ -13,8 +13,12 @@ services:
     runtime: nvidia
     environment:
       - OLLAMA_MODELS=/root/.ollama/models
-      - OLLAMA_KEEP_ALIVE=5m
-      - OLLAMA_CONTEXT_LENGTH=131072
+      # 60s statt 5m: Modell schnell aus dem VRAM entlassen (Jellyfin braucht die GPU)
+      - OLLAMA_KEEP_ALIVE=60s
+      # 32k statt 128k: KV-Cache klein halten
+      - OLLAMA_CONTEXT_LENGTH=32768
+      # 2 GiB VRAM dauerhaft fuer andere GPU-Nutzer (Jellyfin/NVENC) reservieren
+      - OLLAMA_GPU_OVERHEAD=2147483648
       - OLLAMA_FLASH_ATTENTION=1
       - OLLAMA_KV_CACHE_TYPE=q8_0
       - OLLAMA_NUM_PARALLEL=1
