@@ -1,0 +1,430 @@
+#!/usr/bin/env python3
+"""openScale (MQTT) -> Postgres -> YAZIO.
+
+Hoert auf dem MQTT-Broker die Messungen der openScale-Sync-App, schreibt sie in
+die Tabelle ``body_measurement`` und traegt das Gewicht zusaetzlich in YAZIO ein,
+sofern fuer den Tag dort noch kein Gewicht steht.
+
+Aufruf:
+    weight_bridge.py            # Dauerbetrieb im Container
+
+Konfiguration ueber Umgebungsvariablen (siehe README).
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+import uuid
+from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
+
+import paho.mqtt.client as mqtt
+import psycopg
+
+import exporter as yz
+
+MQTT_HOST = os.environ.get("MQTT_HOST", "10.0.10.10")
+MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
+MQTT_USER = os.environ.get("MQTT_USER", "openscale")
+MQTT_PASSWORD = os.environ.get("MQTT_PASSWORD", "")
+MQTT_TOPIC = os.environ.get("MQTT_TOPIC", "openScaleSync/#")
+# Home Assistant schickt Messungen der Waage als eigenes Thema, seit die
+# Auswertung dort stattfindet (Xiaomi S400 ueber ESPHome-Bluetooth-Proxy).
+HA_TOPIC = os.environ.get("MQTT_HA_TOPIC", "yazio/weight")
+PUSH_WEIGHT = os.environ.get("YAZIO_PUSH_WEIGHT", "1") == "1"
+LOCAL_TZ = ZoneInfo(os.environ.get("YAZIO_TIMEZONE", "Europe/Berlin"))
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS body_measurement (
+    id            bigserial PRIMARY KEY,
+    openscale_id  bigint,
+    measured_at   timestamptz NOT NULL,
+    weight_kg     numeric(6,2),
+    body_fat_pct  numeric(5,2),
+    water_pct     numeric(5,2),
+    muscle_pct    numeric(5,2),
+    lbm_pct       numeric(5,2),
+    bone_pct      numeric(5,2),
+    source        text NOT NULL DEFAULT 'openscale',
+    raw           jsonb,
+    created_at    timestamptz NOT NULL DEFAULT now(),
+    updated_at    timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS body_measurement_openscale_id
+    ON body_measurement (openscale_id) WHERE openscale_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS body_measurement_measured_at
+    ON body_measurement (measured_at);
+"""
+
+IDENTITIES = {
+    "builtin.weight": "weight_kg",
+    "builtin.body_fat": "body_fat_pct",
+    "builtin.water": "water_pct",
+    "builtin.muscle": "muscle_pct",
+    "builtin.lbm": "lbm_pct",
+    "builtin.bone": "bone_pct",
+}
+
+CONVENIENCE = {
+    "weight": "weight_kg",
+    "body_fat": "body_fat_pct",
+    "water": "water_pct",
+    "muscle": "muscle_pct",
+    "lbm": "lbm_pct",
+    "bone": "bone_pct",
+}
+
+
+def log(message: str) -> None:
+    print("%s %s" % (datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), message), flush=True)
+
+
+def parse_moment(value: str | None) -> datetime | None:
+    """openScale liefert "2025-12-27T10:30+0100"."""
+    if not value:
+        return None
+    for pattern in ("%Y-%m-%dT%H:%M%z", "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%d %H:%M:%S%z"):
+        try:
+            return datetime.strptime(value, pattern)
+        except ValueError:
+            continue
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def extract(payload: dict) -> dict:
+    values: dict[str, object] = {column: None for column in IDENTITIES.values()}
+
+    for item in payload.get("values") or []:
+        column = IDENTITIES.get(str(item.get("identity", "")))
+        if column and item.get("value") is not None:
+            values[column] = item["value"]
+
+    for key, column in CONVENIENCE.items():
+        if values[column] is None and payload.get(key) is not None:
+            values[column] = payload[key]
+
+    return values
+
+
+def store(
+    conn: psycopg.Connection, payload: dict, source: str = "openscale"
+) -> tuple[datetime, float] | None:
+    measured_at = parse_moment(payload.get("date"))
+    if measured_at is None:
+        log("Messung ohne lesbares Datum uebersprungen: %s" % payload)
+        return None
+
+    values = extract(payload)
+    # openScale schickt dieselbe Messung live mit Millisekunden und beim
+    # Verlaufssync ohne. Ohne diesen Abgleich entstehen Dubletten.
+    duplicate = conn.execute(
+        """
+        SELECT id FROM body_measurement
+        WHERE source = %(source)s
+          AND measured_at BETWEEN %(moment)s::timestamptz - interval '90 seconds'
+                               AND %(moment)s::timestamptz + interval '90 seconds'
+          AND openscale_id IS DISTINCT FROM %(openscale_id)s
+        LIMIT 1
+        """,
+        {"moment": measured_at, "openscale_id": payload.get("id"), "source": source},
+    ).fetchone()
+    if duplicate:
+        log("Messung fuer %s bereits vorhanden, uebersprungen" % measured_at.isoformat(timespec="seconds"))
+        return None
+
+    conn.execute(
+        """
+        INSERT INTO body_measurement (openscale_id, measured_at, weight_kg, body_fat_pct,
+                                      water_pct, muscle_pct, lbm_pct, bone_pct, source, raw)
+        VALUES (%(openscale_id)s, %(measured_at)s, %(weight_kg)s, %(body_fat_pct)s,
+                %(water_pct)s, %(muscle_pct)s, %(lbm_pct)s, %(bone_pct)s, %(source)s, %(raw)s)
+        ON CONFLICT (openscale_id) WHERE openscale_id IS NOT NULL DO UPDATE
+           SET measured_at  = EXCLUDED.measured_at,
+               weight_kg    = EXCLUDED.weight_kg,
+               body_fat_pct = EXCLUDED.body_fat_pct,
+               water_pct    = EXCLUDED.water_pct,
+               muscle_pct   = EXCLUDED.muscle_pct,
+               lbm_pct      = EXCLUDED.lbm_pct,
+               bone_pct     = EXCLUDED.bone_pct,
+               raw          = EXCLUDED.raw,
+               updated_at   = now()
+        """,
+        {
+            "openscale_id": payload.get("id"),
+            "measured_at": measured_at,
+            "raw": json.dumps(payload, ensure_ascii=False),
+            "source": source,
+            **values,
+        },
+    )
+    log(
+        "Messung gespeichert: %s %s kg (Fett %s)"
+        % (measured_at.isoformat(), values["weight_kg"], values["body_fat_pct"])
+    )
+
+    weight = values["weight_kg"]
+    if weight is None:
+        return None
+    return measured_at, float(weight)
+
+
+def delete_moment(conn: psycopg.Connection, payload: dict) -> None:
+    moment = parse_moment(payload.get("date") or payload.get("dateTime"))
+    if moment is None:
+        return
+    cur = conn.execute(
+        "DELETE FROM body_measurement WHERE measured_at = %s AND source = 'openscale'", (moment,)
+    )
+    log("Messung geloescht: %s (%s Zeilen)" % (moment.isoformat(), cur.rowcount))
+
+
+def clear_all(conn: psycopg.Connection) -> None:
+    cur = conn.execute("DELETE FROM body_measurement WHERE source = 'openscale'")
+    log("Alle openScale-Messungen geloescht (%s Zeilen)" % cur.rowcount)
+
+
+def post_json(client: yz.YazioClient, path: str, payload: dict, method: str = "POST") -> int:
+    client.ensure_token()
+    request = urllib.request.Request(
+        yz.API_BASE + path,
+        data=json.dumps(payload).encode(),
+        headers=dict(
+            yz.BASE_HEADERS,
+            authorization="Bearer " + (client.access_token or ""),
+            **{"content-type": "application/json"},
+        ),
+        method=method,
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return response.status
+    except urllib.error.HTTPError as error:
+        if error.code == 401:
+            client.access_token = None
+            client.ensure_token()
+            return post_json(client, path, payload)
+        raise
+
+
+def _latest_weight(payload) -> dict | None:
+    """Neuester Gewichtseintrag aus GET /user/bodyvalues?date= (Map von Listen)."""
+    if not isinstance(payload, dict):
+        return None
+    entries = payload.get("weight")
+    if not isinstance(entries, list) or not entries:
+        return None
+    usable = [item for item in entries if isinstance(item, dict) and item.get("id")]
+    if not usable:
+        return None
+    return max(usable, key=lambda item: str(item.get("date") or ""))
+
+
+def push_weight(conn: psycopg.Connection, client: yz.YazioClient, moment: datetime, weight: float) -> None:
+    """YAZIO erwartet {"weight": [<eintrag>]}, Eintrag mit clientseitiger UUID.
+
+    Datum im Format "YYYY-MM-DD HH:MM:SS" ohne Zeitzone, sonst wird der Eintrag
+    mit HTTP 201 quittiert, aber nicht gespeichert.
+    """
+    if not PUSH_WEIGHT:
+        return
+    local = moment.astimezone(LOCAL_TZ)
+    day = local.date()
+    entry = {
+        "id": str(uuid.uuid4()),
+        "date": local.strftime("%Y-%m-%d %H:%M:%S"),
+        "value": round(float(weight), 3),
+        "source": None,
+        "gateway": None,
+    }
+
+    # Neuester Eintrag des Tages: gleiche Zahl ueberspringen, sonst aktualisieren.
+    # YAZIO kennt kein DELETE, ein zweiter Eintrag wuerde also nur doppelt zaehlen.
+    current = _latest_weight(client.get("/v22/user/bodyvalues", date=day.isoformat()))
+    if current:
+        old = float(current.get("value") or 0)
+        if abs(old - entry["value"]) < 0.05:
+            log("YAZIO hat fuer %s bereits %s kg, kein Eintrag" % (day, old))
+            return
+        entry_id = str(current.get("id") or "")
+        if entry_id:
+            for base in ("/v22", "/v20"):
+                try:
+                    status = post_json(
+                        client,
+                        base + "/user/bodyvalues/" + entry_id,
+                        {"value": entry["value"]},
+                        method="PUT",
+                    )
+                except yz.ApiError as error:
+                    if error.status in (404, 405) and base == "/v22":
+                        continue
+                    raise
+                log(
+                    "YAZIO-Gewicht fuer %s aktualisiert: %s -> %s kg (HTTP %s, %s)"
+                    % (day, old, entry["value"], status, base)
+                )
+                return
+
+    for base in ("/v22", "/v20"):
+        try:
+            status = post_json(client, base + "/user/bodyvalues", {"weight": [entry]})
+        except yz.ApiError as error:
+            if error.status in (404, 405) and base == "/v22":
+                continue
+            raise
+        log("YAZIO-Gewicht fuer %s eingetragen: %s kg (HTTP %s, %s)" % (day, weight, status, base))
+        return
+
+
+def import_history(conn: psycopg.Connection, payload: dict) -> None:
+    """openScale sync schickt auf "history" ein Spaltenpaket: fields, units, rows.
+
+    rows sind Listen in der Reihenfolge von fields, die erste Spalte ist der
+    Zeitstempel in Millisekunden. Bereits bekannte Messungen werden uebersprungen,
+    damit ein erneuter Verlaufssync keine Dubletten erzeugt.
+    """
+    fields = [str(field) for field in payload.get("fields") or []]
+    rows = payload.get("rows") or []
+    if not fields or "date" not in fields:
+        return
+
+    stored = 0
+    for row in rows:
+        if not isinstance(row, list) or len(row) != len(fields):
+            continue
+        item = dict(zip(fields, row))
+        raw_date = item.pop("date", None)
+        if raw_date is None:
+            continue
+        try:
+            moment = datetime.fromtimestamp(float(raw_date) / 1000, tz=timezone.utc)
+        except (TypeError, ValueError):
+            continue
+        exists = conn.execute(
+            "SELECT 1 FROM body_measurement WHERE measured_at = %s AND source = 'openscale'",
+            (moment,),
+        ).fetchone()
+        if exists:
+            continue
+        item["date"] = moment.astimezone(LOCAL_TZ).isoformat()
+        item = {key: value for key, value in item.items() if value is not None}
+        if store(conn, item):
+            stored += 1
+
+    log("Verlauf uebernommen: %s neue von %s Messungen" % (stored, len(rows)))
+
+
+def handle(
+    conn: psycopg.Connection,
+    client: yz.YazioClient,
+    event: str,
+    payload: object,
+    source: str = "openscale",
+) -> None:
+    if event == "clear":
+        clear_all(conn)
+        return
+    if event == "delete":
+        delete_moment(conn, payload if isinstance(payload, dict) else json.loads(payload))
+        return
+    if isinstance(payload, dict) and isinstance(payload.get("rows"), list) and payload.get("fields"):
+        import_history(conn, payload)
+        return
+
+    items = payload if isinstance(payload, list) else [payload]
+    if isinstance(payload, dict) and isinstance(payload.get("measurements"), list):
+        items = payload["measurements"]
+
+    newest: tuple[datetime, float] | None = None
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        stored = store(conn, item, source)
+        if stored and (newest is None or stored[0] > newest[0]):
+            newest = stored
+
+    if newest:
+        try:
+            push_weight(conn, client, newest[0], newest[1])
+        except Exception as error:  # YAZIO-Ausfall darf die Aufzeichnung nicht stoppen
+            log("YAZIO-Eintrag fehlgeschlagen: %s" % error)
+
+
+def on_connect(client: mqtt.Client, userdata, flags, reason_code, properties=None) -> None:
+    log("MQTT verbunden (%s), abonniere %s und %s" % (reason_code, MQTT_TOPIC, HA_TOPIC))
+    client.subscribe(MQTT_TOPIC, qos=1)
+    client.subscribe(HA_TOPIC, qos=1)
+
+
+def on_message(client: mqtt.Client, userdata, message) -> None:
+    db, yazio = userdata
+    topic = message.topic
+    event = topic.rsplit("/", 1)[-1]
+    try:
+        payload = json.loads(message.payload.decode() or "null")
+    except json.JSONDecodeError:
+        log("Ungueltiges JSON auf %s" % topic)
+        return
+
+    # Home Assistant: {"weight": 62.1, "timestamp": "...", "impedance_low": ...}
+    if topic == HA_TOPIC:
+        if not isinstance(payload, dict) or payload.get("weight") is None:
+            return
+        item = {
+            "weight": payload.get("weight"),
+            "date": payload.get("timestamp") or datetime.now(LOCAL_TZ).isoformat(),
+        }
+        for key in ("impedance_low", "impedance_high"):
+            if payload.get(key) is not None:
+                item[key] = payload[key]
+        payload = item
+        source = "scale"
+    else:
+        source = "openscale"
+
+    try:
+        handle(db, yazio, event, payload, source)
+    except psycopg.Error as error:
+        log("Datenbankfehler bei %s: %s" % (topic, error))
+    except Exception as error:
+        log("Fehler bei %s: %s" % (topic, error))
+
+
+def main() -> None:
+    conn = yz.connect()
+    conn.execute(SCHEMA)
+    yazio = yz.YazioClient(conn)
+
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="yazio-weight-bridge")
+    if MQTT_USER:
+        client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
+    client.user_data_set((conn, yazio))
+    client.on_connect = on_connect
+    client.on_message = on_message
+
+    while True:
+        try:
+            client.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
+            break
+        except OSError as error:
+            log("MQTT nicht erreichbar (%s), neuer Versuch in 15s" % error)
+            import time
+
+            time.sleep(15)
+
+    log("Weight-Bridge laeuft")
+    client.loop_forever(retry_first_connection=True)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(0)

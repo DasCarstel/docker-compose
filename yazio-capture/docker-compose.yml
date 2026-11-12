@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: yazio-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: yazio
+      POSTGRES_USER: yazio
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      TZ: Europe/Berlin
+    ports:
+      - "10.0.10.10:5432:5432"
+    volumes:
+      - /etc/docker/yazio-capture/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yazio -d yazio"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  exporter:
+    build: ./exporter
+    image: yazio-exporter:local
+    container_name: yazio-exporter
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - yazio.env
+    environment:
+      DATABASE_URL: postgresql://yazio:${POSTGRES_PASSWORD:?}@postgres:5432/yazio
+      TZ: Europe/Berlin
+    command: ["--loop", "--interval", "21600"]
+
+  weight-bridge:
+    build: ./exporter
+    image: yazio-exporter:local
+    container_name: yazio-weight-bridge
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - yazio.env
+    environment:
+      DATABASE_URL: postgresql://yazio:${POSTGRES_PASSWORD:?}@postgres:5432/yazio
+      TZ: Europe/Berlin
+      YAZIO_PUSH_WEIGHT: "1"
+    entrypoint: ["python", "/app/weight_bridge.py"]
+    networks:
+      - default
+      - mqtt
+
+networks:
+  mqtt:
+    external: true
+    name: homeassistant-mqtt5-zigbee2mqtt_mqqtnetwork
