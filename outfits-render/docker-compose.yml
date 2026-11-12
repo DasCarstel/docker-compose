@@ -1,0 +1,43 @@
+# Outfit-Render-Service (ergaenzt wardrowbe um generierte Outfit-Bilder)
+# Stack: /opt/docker-compose/outfits-render/
+# Nutzt die wardrowbe-Datenbank (nur SELECT) und den Bildspeicher (nur lesend).
+
+services:
+  render:
+    build: .
+    container_name: outfits-render
+    security_opt:
+      - no-new-privileges:true
+    env_file:
+      - .env
+    environment:
+      APPDATA_DIR: /appdata
+      STORAGE_ROOT: /storage
+      TZ: Europe/Berlin
+    volumes:
+      - /etc/docker/outfits-render:/appdata
+      - /etc/docker/wardrobe/data:/storage:ro
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.outfits.entrypoints=http"
+      - "traefik.http.routers.outfits.rule=Host(`outfits.mueller-nas.de`)"
+      - "traefik.http.middlewares.outfits-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.outfits.middlewares=outfits-https-redirect"
+      - "traefik.http.routers.outfits-secure.entrypoints=https"
+      - "traefik.http.routers.outfits-secure.rule=Host(`outfits.mueller-nas.de`)"
+      - "traefik.http.routers.outfits-secure.tls=true"
+      - "traefik.http.routers.outfits-secure.middlewares=authentik@docker"
+      - "traefik.http.routers.outfits-secure.service=outfits"
+      - "traefik.http.services.outfits.loadbalancer.server.port=8080"
+      - "traefik.docker.network=proxy"
+    networks:
+      - internal
+      - proxy
+
+networks:
+  proxy:
+    external: true
+  internal:
+    external: true
+    name: wardrobe_internal
