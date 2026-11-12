@@ -34,10 +34,10 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
-      - PIPER_VOICE=de_DE-thorsten-medium
-      - PIPER_LENGTH=1.0 #optional
-      - PIPER_NOISE=0.667 #optional
-      - PIPER_NOISEW=0.333 #optional
+      - PIPER_VOICE=de_DE-thorsten-high
+      - PIPER_LENGTH=0.85
+      - PIPER_NOISE=0.95
+      - PIPER_NOISEW=0.55
       - PIPER_SPEAKER=0 #optional
       - PIPER_PROCS=1 #optional
     volumes:
