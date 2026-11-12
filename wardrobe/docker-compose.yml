@@ -1,0 +1,195 @@
+# Wardrowbe - AI wardrobe / outfit suggestions
+# Stack: /opt/docker-compose/wardrobe/
+# Daten: /etc/docker/wardrobe/{postgres,redis,data,rembg}
+# UI:    https://wardrobe.mueller-nas.de  (Authentik OIDC, native)
+
+x-backend-env: &backend-env
+  DEBUG: "false"
+  PUID: ${PUID:-1000}
+  PGID: ${PGID:-1000}
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+  REDIS_URL: redis://wardrobe-redis:6379/0
+  SECRET_KEY: ${SECRET_KEY}
+  STORAGE_PATH: /data/wardrobe
+  APP_URL: ${APP_URL}
+  LOG_LEVEL: INFO
+  AI_BASE_URL: ${AI_BASE_URL}
+  AI_API_KEY: ${AI_API_KEY}
+  AI_VISION_MODEL: ${AI_VISION_MODEL}
+  AI_TEXT_MODEL: ${AI_TEXT_MODEL}
+  AI_TIMEOUT: ${AI_TIMEOUT:-300}
+  AI_MAX_RETRIES: "2"
+  AI_TAGGING_CONCURRENCY: "1"
+  AI_INTERNAL_ENABLED: "true"
+  AI_REASONING_EFFORT: ""
+  MAX_IMAGE_MEGAPIXELS: "50"
+  MAX_UPLOAD_SIZE_MB: "50"
+  NTFY_SERVER: ${NTFY_SERVER:-}
+  NTFY_TOKEN: ${NTFY_TOKEN:-}
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: wardrobe-db
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      TZ: Europe/Berlin
+    volumes:
+      - /etc/docker/wardrobe/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: wardrobe-redis
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/docker/wardrobe/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - internal
+
+  backend:
+    image: ghcr.io/anyesh/wardrowbe:backend-latest
+    container_name: wardrobe-backend
+    extra_hosts:
+      - "auth.mueller-nas.de:192.168.80.1"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      <<: *backend-env
+      CORS_ORIGINS: '["https://wardrobe.mueller-nas.de"]'
+      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      TRUSTED_PROXY_COUNT: "1"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.wardrobe-api.entrypoints=https"
+      - "traefik.http.routers.wardrobe-api.rule=Host(`wardrobe.mueller-nas.de`) && PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.wardrobe-api.priority=100"
+      - "traefik.http.routers.wardrobe-api.tls=true"
+      - "traefik.http.routers.wardrobe-api.service=wardrobe-api"
+      - "traefik.http.services.wardrobe-api.loadbalancer.server.port=8000"
+    volumes:
+      - /etc/docker/wardrobe/data:/data/wardrobe
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - internal
+      - ollama
+      - proxy
+  frontend:
+    image: ghcr.io/anyesh/wardrowbe:frontend-latest
+    container_name: wardrobe-frontend
+    extra_hosts:
+      - "auth.mueller-nas.de:192.168.80.1"
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      BACKEND_URL: http://backend:8000
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      DEV_MODE: "false"
+      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      OIDC_END_SESSION_URL: ${OIDC_END_SESSION_URL}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: Europe/Berlin
+    depends_on:
+      - backend
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wardrobe.entrypoints=http"
+      - "traefik.http.routers.wardrobe.rule=Host(`wardrobe.mueller-nas.de`)"
+      - "traefik.http.middlewares.wardrobe-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.wardrobe.middlewares=wardrobe-https-redirect"
+      - "traefik.http.routers.wardrobe-secure.entrypoints=https"
+      - "traefik.http.routers.wardrobe-secure.rule=Host(`wardrobe.mueller-nas.de`)"
+      - "traefik.http.routers.wardrobe-secure.tls=true"
+      - "traefik.http.routers.wardrobe-secure.service=wardrobe"
+      - "traefik.http.services.wardrobe.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
+    networks:
+      - internal
+      - proxy
+
+  worker:
+    image: ghcr.io/anyesh/wardrowbe:backend-latest
+    container_name: wardrobe-worker
+    security_opt:
+      - no-new-privileges:true
+    command: arq app.workers.worker.WorkerSettings
+    environment:
+      <<: *backend-env
+    volumes:
+      - /etc/docker/wardrobe/data:/data/wardrobe
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - internal
+      - ollama
+
+  image-worker:
+    image: ghcr.io/anyesh/wardrowbe:backend-latest
+    container_name: wardrobe-image-worker
+    security_opt:
+      - no-new-privileges:true
+    command: arq app.workers.image_worker.ImageWorkerSettings
+    environment:
+      <<: *backend-env
+      IMAGE_WORKER_CONCURRENCY: "1"
+      BG_REMOVAL_PROVIDER: rembg
+      BG_REMOVAL_MODEL: u2net
+    volumes:
+      - /etc/docker/wardrobe/data:/data/wardrobe
+      - /etc/docker/wardrobe/rembg:/opt/rembg/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - internal
+
+networks:
+  proxy:
+    external: true
+  ollama:
+    external: true
+  internal:
+    name: wardrobe_internal

@@ -1,0 +1,17 @@
+# PRO-347 ai-overrides: bind-mounted, fork-less overrides for wardrobe backend/worker.
+# Rollback: delete this file and run `docker compose up -d backend worker`.
+services:
+  backend:
+    volumes:
+      - ./ai-overrides/recommendation.txt:/app/app/prompts/recommendation.txt:ro
+      - ./ai-overrides/clothing.py:/app/app/utils/clothing.py:ro
+      - ./ai-overrides/clothing_analysis.txt:/app/app/prompts/clothing_analysis.txt:ro
+  worker:
+    volumes:
+      - ./ai-overrides/clothing_analysis.txt:/app/app/prompts/clothing_analysis.txt:ro
+
+  # PRO-347 hestia-panel: publish the wardrobe DB for the Hestia backend
+  # (coder-host reads panel_settings/render_usage; hestia DB role is limited).
+  postgres:
+    ports:
+      - "10.0.10.10:5433:5432"

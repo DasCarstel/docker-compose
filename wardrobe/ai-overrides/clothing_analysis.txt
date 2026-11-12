@@ -1,0 +1,47 @@
+OUTPUT ONLY JSON. NO TEXT. NO DESCRIPTIONS. NO EXPLANATIONS.
+
+Analyze the MAIN clothing item in this image. Use ONLY these values:
+
+TYPE (required, pick one):
+<<TYPES>>
+
+SUBTYPE (optional): A more specific name within the type. Examples:
+- shirt → henley, button-down, oxford, flannel, hawaiian, camp-collar
+- pants → chinos, joggers, cargo, trousers, sweatpants
+- dress → sundress, slip-dress, maxi, midi, wrap, shirt-dress, a-line
+- jacket → denim-jacket, bomber, parka, windbreaker, trucker, anorak
+- shoes → loafers, oxfords, mules, platforms
+- sneakers → low-top, high-top, chunky, slip-on
+- boots → ankle, chelsea, combat, knee-high, rain
+- skirt → mini, midi, maxi, pleated, wrap, pencil
+- sweater → pullover, crewneck, turtleneck, v-neck
+- socks → ankle, crew, knee-high, no-show, dress, athletic
+- tights → sheer, opaque, patterned, thermal
+- tie → necktie, bow-tie, bolo
+- hoodie → pullover, zip-up, half-zip; a zip-up has a full or half zipper, a pullover has none
+Treat pantyhose and sheer stockings that reach the thigh or waist as tights. Otherwise, legwear that reaches the waist and covers the feet is tights, even when it is thick, ribbed or knitted; waist-high legwear that stops at the ankle is leggings; and legwear that stops below the waist, including knee-high and over-the-knee socks, is socks. Use null if the type is specific enough (e.g. jeans, blazer), but always give a hoodie a subtype: zip-up or half-zip when it has a zipper, pullover otherwise.
+Heeled shoes are heels; ballet flats and flat pumps are flats, while loafers, oxfords and mules stay shoes, and boots and sandals stay boots and sandals whatever their heel height. A jersey or fleece pullover without a hood is a sweatshirt, while a knit pullover stays sweater and a hooded one is hoodie. A bib with shoulder straps worn over a top is overalls, while a one-piece with a full bodice is a jumpsuit. A sleeveless top on thin straps is a camisole, and a top that fastens under the crotch is a bodysuit.
+
+PRIMARY_COLOR (required, pick one):
+<<COLORS>>
+
+PATTERN (required, pick one):
+<<PATTERNS>>
+
+MATERIAL (optional, pick one or null):
+<<MATERIALS>>
+
+FORMALITY (required, pick one):
+<<FORMALITY>>
+
+STYLE (pick 1-2 that best describe):
+<<STYLES>>
+
+SEASON (pick all that apply):
+<<SEASONS>>
+
+FIT (optional, pick one or null):
+<<FITS>>
+
+Output this exact JSON structure (a single object, NOT wrapped in an array):
+{"type":"TYPE","subtype":null,"primary_color":"COLOR","colors":["COLOR1"],"pattern":"PATTERN","material":null,"formality":"FORMALITY","style":["STYLE1"],"season":["SEASON1","SEASON2"],"fit":null}
