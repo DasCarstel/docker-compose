@@ -1,0 +1,17 @@
+services:
+  ai-shim:
+    build: .
+    container_name: wardrobe-shim
+    restart: unless-stopped
+    environment:
+      UPSTREAM: https://generativelanguage.googleapis.com
+      GO_UPSTREAM: https://opencode.ai/inference/go
+      GO_MODELS: ${GO_MODELS:-glm-5.3-flash,gpt-6-luna}
+      GO_FALLBACK_MODEL: gemini-flash-latest
+      GO_API_KEY: ${GO_API_KEY}
+      GO_SESSION_ID: wardrobe-shim-1
+    networks:
+      - wardrobe_internal
+networks:
+  wardrobe_internal:
+    external: true
