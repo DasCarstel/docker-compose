@@ -1,0 +1,7 @@
+# Versionen exakt pinnnen ( lokal mit Python 3.12.16 getestet )
+mcp==1.30.0
+httpx==0.28.1
+uvicorn==0.54.0
+
+# Test-Abhängigkeit (nur für die lokale pytest-Ausführung benötigt)
+pytest==9.2.0

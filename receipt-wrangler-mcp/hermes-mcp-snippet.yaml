@@ -1,0 +1,28 @@
+# Hermes-Registrierung für bons-mcp — NICHT automatisch angewendet.
+#
+# Einsetzen in /etc/docker/hermes/data/config.yaml auf dem Coder-Host (10.0.10.17):
+#
+#   1) Block unter bestehendes `mcp_servers:` einfügen (2 Leerzeichen Einrückung,
+#      wie bei super-productivity / homeassistant).
+#   2) In `toolsets.enabled` UND in `platform_toolsets` je eine eigene Zeile
+#      `- mcp-bons` ergänzen (Stolperfalle: je Toolset eine eigene Listenzeile).
+#   3) `docker restart hermes`, danach:
+#      docker exec -u 0 hermes sh -lc 'HOME=/opt/data /opt/hermes/bin/hermes mcp test bons'
+#
+# Token: OpenBao `secret/data/mcp/bons`, Feld `token`. Niemals im Repo ablegen.
+
+mcp_servers:
+  bons:
+    type: http
+    url: https://mcp-bons.mueller-nas.de/mcp
+    headers:
+      Accept: application/json
+      Authorization: Bearer <token aus secret/data/mcp/bons>
+
+# Zusätzlich in beide Listen aufnehmen:
+# toolsets:
+#   enabled:
+#   - mcp-bons
+# platform_toolsets:
+#   api_server:            # bzw. die vorhandene Unterschlüssel-Struktur
+#   - mcp-bons

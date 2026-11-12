@@ -1,0 +1,26 @@
+services:
+  mcp:
+    image: receipt-wrangler-mcp:0.1.2
+    container_name: receipt-wrangler-mcp
+    restart: unless-stopped
+    expose: ["8000"]
+    environment:
+      - RW_BASE_URL=${RW_BASE_URL:-http://receipt-wrangler:80}
+      - RW_API_TOKEN=${RW_API_TOKEN}
+      - MCP_AUTH_TOKENS=${BONS_MCP_TOKEN}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bons-mcp.entrypoints=http"
+      - "traefik.http.routers.bons-mcp.rule=Host(`mcp-bons.mueller-nas.de`)"
+      - "traefik.http.middlewares.bons-mcp-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.bons-mcp.middlewares=bons-mcp-https-redirect"
+      - "traefik.http.routers.bons-mcp-secure.entrypoints=https"
+      - "traefik.http.routers.bons-mcp-secure.rule=Host(`mcp-bons.mueller-nas.de`)"
+      - "traefik.http.routers.bons-mcp-secure.tls=true"
+      - "traefik.http.routers.bons-mcp-secure.service=bons-mcp"
+      - "traefik.http.services.bons-mcp.loadbalancer.server.port=8000"
+      - "traefik.docker.network=proxy"
+    networks: [proxy]
+networks:
+  proxy:
+    external: true
