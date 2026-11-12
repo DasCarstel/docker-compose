@@ -1,0 +1,20 @@
+services:
+  traefik-headscale:
+    image: traefik:v3.6
+    container_name: traefik-headscale
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "8443:8443"
+    environment:
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+    volumes:
+      - /etc/docker/headscale-edge/traefik.yml:/traefik.yml:ro
+      - /etc/docker/headscale-edge/rules:/rules:ro
+      - /etc/docker/headscale-edge/acme.json:/acme.json
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true
