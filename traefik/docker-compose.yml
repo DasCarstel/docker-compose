@@ -55,7 +55,7 @@ services:
 
   tunnel:
     container_name: cloudflared-tunnel
-    image: cloudflare/cloudflared:2026.10.3
+    image: cloudflare/cloudflared
     restart: unless-stopped
     command: tunnel run
     networks:
