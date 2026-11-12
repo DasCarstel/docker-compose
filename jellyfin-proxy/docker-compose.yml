@@ -1,0 +1,35 @@
+services:
+  ts-jellyfin-proxy:
+    image: tailscale/tailscale:latest
+    container_name: ts-jellyfin-proxy
+    restart: unless-stopped
+    extra_hosts:
+      - "headscale.mueller-nas.de:10.0.10.10"
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+      - TS_HOSTNAME=jellyfin-proxy
+      - TS_EXTRA_ARGS=--accept-dns=false --login-server=https://headscale.mueller-nas.de:8443
+    volumes:
+      - /etc/docker/jellyfin-proxy/ts:/var/lib/tailscale
+    networks:
+      - proxy
+
+  front:
+    image: nginx:alpine
+    container_name: jellyfin-proxy
+    restart: unless-stopped
+    network_mode: "service:ts-jellyfin-proxy"
+    depends_on:
+      - ts-jellyfin-proxy
+    volumes:
+      - /etc/docker/jellyfin-proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+networks:
+  proxy:
+    external: true
