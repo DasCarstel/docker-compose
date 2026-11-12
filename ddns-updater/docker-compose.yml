@@ -1,0 +1,16 @@
+services:
+  ddns-updater:
+    image: qmcgaw/ddns-updater:latest
+    container_name: ddns-updater
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - TZ=Europe/Berlin
+      - PERIOD=2m
+      - SERVER_ENABLED=no
+      - LOG_LEVEL=info
+      - LOG_CALLER=short
+      - RESOLVER_ADDRESS=1.1.1.1:53
+    volumes:
+      - /etc/docker/ddns-updater:/updater/data
