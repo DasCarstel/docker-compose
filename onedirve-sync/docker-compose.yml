@@ -13,5 +13,8 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-    logging: # Docker hat vorher sehr viel geloggt, das war nicht nötig
-        driver: none
+    logging:
+        driver: json-file
+        options:
+            max-size: "10m"
+            max-file: "3"
